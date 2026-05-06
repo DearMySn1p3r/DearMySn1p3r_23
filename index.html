@@ -92,19 +92,18 @@ body{
   background:var(--ps);flex-shrink:0;transition:background .4s;
 }
 .cm{flex:1;min-width:0}
-.cu{font-size:11px;font-weight:400;color:var(--bl);display:flex;align-items:center;gap:3px}
-/* 수정: 상단 아이디 약간 위로 올림 */
-.cu span[contenteditable]{border-bottom:1px solid transparent;transition:border-color .2s;cursor:text;outline:none;position:relative;top:-1.5px}
+.cu{font-size:11px;font-weight:400;color:var(--bl);display:flex;align-items:center;gap:4px;line-height:1.2}
+.cu span[contenteditable]{border-bottom:1px solid transparent;transition:border-color .2s;cursor:text;outline:none}
 .cu span[contenteditable]:focus{border-bottom-color:var(--bl)}
 .vb{
-  width:12px;height:12px;border-radius:50%;background:var(--bl);
+  width:13px;height:13px;border-radius:50%;background:var(--bl);
   display:inline-flex;align-items:center;justify-content:center;
   flex-shrink:0;cursor:pointer;transition:opacity .2s;
 }
 .vb.off{opacity:.2}
-.vb svg{width:7px;height:7px}
-.cf{font-size:9px;color:var(--mt);margin-top:1px;transition:color .4s}
-.cf b{color:var(--tx);font-weight:500}
+.vb svg{width:8px;height:8px;display:block}
+.cf{font-size:9px;color:#bbb;margin-top:1px;transition:color .4s}
+.cf b{color:#888;font-weight:500}
 
 /* image */
 .iw{
@@ -134,10 +133,11 @@ body{
   position:absolute;
   background:rgba(232,160,160,.75);backdrop-filter:blur(6px);
   color:#fff;font-size:10.5px;font-weight:400;
-  padding:2.5px 9px 4.5px;border-radius:5px;
+  padding:4px 9px;border-radius:5px;line-height:1;
   cursor:grab;white-space:nowrap;z-index:20;
   box-shadow:0 2px 8px rgba(0,0,0,.1);
   transition:box-shadow .15s,background .4s;letter-spacing:.2px;
+  display:inline-flex;align-items:center;
 }
 .tag:hover{box-shadow:0 3px 12px rgba(0,0,0,.16)}
 .tag:active{cursor:grabbing}
@@ -188,13 +188,13 @@ body{
 .sbar{
   width:340px;display:flex;align-items:center;gap:5px;
   background:rgba(255,255,255,.5);backdrop-filter:blur(8px);
-  border-radius:20px;padding:5px 10px;margin-top:6px; /* 위 카드와 간격 추가 */
+  border-radius:20px;padding:6px 10px;margin-top:6px;
 }
-.sbar svg{width:11px;height:11px;color:var(--mt);flex-shrink:0;transition:color .4s}
+.sbar svg{width:11px;height:11px;color:var(--mt);flex-shrink:0;transition:color .4s;display:block}
 .sbar input{
   border:none;background:transparent;outline:none;
   font-family:'Outfit',sans-serif;font-size:10.5px;color:var(--tx);
-  letter-spacing:.3px;width:100%;
+  letter-spacing:.3px;width:100%;line-height:1;padding:0;height:14px;
 }
 
 /* ════════ BOTTOM CARD ════════ */
@@ -207,10 +207,10 @@ body{
 .bav{width:32px;height:32px;border-radius:50%;background:var(--ps);flex-shrink:0;transition:background .4s}
 .bcc{flex:1;min-width:0;margin-top:-2px}
 /* 수정: 하단 아이디 약간 위로 올림 */
-.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s;line-height:1;position:relative;top:-1.5px}
+.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s;line-height:1.2}
 .bcu:focus{border-bottom-color:var(--bl)}
-.bcf{font-size:8.5px;color:var(--mt);margin:1px 0 3px;transition:color .4s}
-.bcf b{color:var(--tx);font-weight:500}
+.bcf{font-size:8.5px;color:#bbb;margin:1px 0 3px;transition:color .4s}
+.bcf b{color:#888;font-weight:500}
 /* 여기서 color를 var(--mt)에서 var(--tx)로 수정했습니다 */
 .bio{font-size:9px;color:var(--tx);line-height:1.45;outline:none;cursor:text;display:block;transition:color .4s}
 
@@ -320,7 +320,7 @@ body{
       <div class="cm">
         <div class="cu">
           <span contenteditable="true" spellcheck="false" id="uA">@NAME_ID</span>
-          <span class="vb" id="vb"><svg viewBox="0 0 24 24" fill="#fff"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="vb" id="vb"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
         </div>
         <div class="cf"><b>1</b> Followers <b>1</b> Following</div>
       </div>
@@ -686,8 +686,41 @@ $('bEx').onclick=async()=>{
     sInClone.parentNode.replaceChild(div,sInClone);
   }
 
-  // 수정: 캡처 시 글자들의 세로 간격(line-height)을 원본과 다르게 강제로 변경하던 코드를 삭제했습니다.
-  // 이로 인해 보이는 화면과 저장되는 사진의 텍스트 배치가 똑같이 유지됩니다.
+  // Fix: contenteditable elements baseline-shift downward in html2canvas → replace with plain spans
+  // IMPORTANT: read computed styles from the ORIGINAL elements (which are mounted in DOM)
+  // Per-element top offsets to compensate html2canvas baseline drop
+  const topAdjust={uA:-3, uB:-3, bioT:0, pnT:0};
+  ['uA','uB','bioT','pnT'].forEach(id=>{
+    const orig=document.getElementById(id);
+    const cloneEl=clone.querySelector('#'+id);
+    if(!orig||!cloneEl)return;
+    const cs=getComputedStyle(orig);
+    const repl=document.createElement(cloneEl.tagName);
+    repl.id=id;
+    repl.className=cloneEl.className;
+    repl.innerHTML=cloneEl.innerHTML;
+    const adj=topAdjust[id]||0;
+    repl.style.cssText=`font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};font-style:${cs.fontStyle};color:${cs.color};letter-spacing:${cs.letterSpacing};line-height:${cs.lineHeight};text-align:${cs.textAlign};display:${cs.display==='inline'?'inline-block':cs.display};vertical-align:middle;border:none;outline:none;text-shadow:${cs.textShadow};margin:${cs.margin};padding:${cs.padding};position:relative;top:${adj}px;`;
+    cloneEl.parentNode.replaceChild(repl,cloneEl);
+  });
+
+  // Pull bottom card content up (gap was much larger in capture than on screen)
+  const bccClone=clone.querySelector('.bcc');
+  if(bccClone){bccClone.style.marginTop='-4px'}
+
+  // Image tags: text drifts down in capture too → adjust padding to lift text up
+  clone.querySelectorAll('.tag').forEach(t=>{
+    t.style.padding='4px 9px';
+    t.style.lineHeight='1';
+  });
+
+  // Force the .cu container to use proper alignment for capture
+  const cuClone=clone.querySelector('.cu');
+  if(cuClone){cuClone.style.alignItems='center';cuClone.style.lineHeight='1'}
+
+  // Verified badge: ensure it stays inline-aligned
+  const vbClone=clone.querySelector('#vb');
+  if(vbClone){vbClone.style.verticalAlign='middle';vbClone.style.flexShrink='0'}
 
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
