@@ -682,14 +682,18 @@ $('bEx').onclick=async()=>{
   if(sInClone){
     const div=document.createElement('div');
     div.textContent=sInClone.value;
-    div.style.cssText='border:none;background:transparent;font-family:Outfit,sans-serif;font-size:10.5px;color:'+getComputedStyle(sInClone).color+';letter-spacing:.3px;width:100%;';
+    div.style.cssText='border:none;background:transparent;font-family:Outfit,sans-serif;font-size:10.5px;color:'+getComputedStyle(sInClone).color+';letter-spacing:.3px;width:100%;line-height:1;display:flex;align-items:center;position:relative;top:-1px;';
     sInClone.parentNode.replaceChild(div,sInClone);
   }
+
+  // Force search bar container to align center properly
+  const sbarClone=clone.querySelector('.sbar');
+  if(sbarClone){sbarClone.style.alignItems='center'}
 
   // Fix: contenteditable elements baseline-shift downward in html2canvas → replace with plain spans
   // IMPORTANT: read computed styles from the ORIGINAL elements (which are mounted in DOM)
   // Per-element top offsets to compensate html2canvas baseline drop
-  const topAdjust={uA:-3, uB:-3, bioT:0, pnT:0};
+  const topAdjust={uA:-1, uB:-1, bioT:0, pnT:-3};
   ['uA','uB','bioT','pnT'].forEach(id=>{
     const orig=document.getElementById(id);
     const cloneEl=clone.querySelector('#'+id);
@@ -710,7 +714,7 @@ $('bEx').onclick=async()=>{
 
   // Image tags: text drifts down in capture too → adjust padding to lift text up
   clone.querySelectorAll('.tag').forEach(t=>{
-    t.style.padding='4px 9px';
+    t.style.padding='2px 9px 6px';
     t.style.lineHeight='1';
   });
 
