@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pair Frame</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400;1,600&family=Outfit:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#e8a0a0;--ps:rgba(232,160,160,.3);--pbg:#f8d4d4;
+  --pp:#fdf0f0;--w:#fff;--tx:#3a2828;--mt:#c0a0a0;--bl:#5b9bd5;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Outfit','Noto Sans KR',sans-serif;
+  background:var(--pp);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .4s;
+}
+
+/* ════════ FULL BG ════════ */
+.bg{
+  position:fixed;inset:0;
+  background:var(--pbg);
+  transition:background .4s;
+  z-index:0;
+}
+.bg::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.38) 1px,transparent 1px);
+  background-size:12px 12px;pointer-events:none;
+}
+/* sparkle dots */
+.bg::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    radial-gradient(circle,rgba(255,255,255,.7) 1px,transparent 1px),
+    radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1px);
+  background-size:80px 80px,120px 120px;
+  background-position:20px 20px,60px 40px;
+  pointer-events:none;
+  animation:sparkle 4s ease-in-out infinite alternate;
+}
+@keyframes sparkle{0%{opacity:.4}100%{opacity:.8}}
+
+/* ════════ SCROLL WRAPPER ════════ */
+.scroll{
+  position:relative;z-index:1;
+  width:100%;height:100%;
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:24px 16px 110px;
+  scrollbar-width:none;
+}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ════════ CAPTURE AREA (for export) ════════ */
+#capture{
+  display:flex;flex-direction:column;align-items:center;
+  width:400px;flex-shrink:0;
+  padding:20px 0 16px;
+}
+
+/* ════════ PAIR NAME TOP ════════ */
+.pn-top{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;font-weight:600;font-size:32px;
+  letter-spacing:2px;line-height:1;
+  color:rgba(255,255,255,.55);
+  text-align:center;
+  margin-bottom:14px;
+  cursor:text;outline:none;
+  transition:color .4s;
+  text-shadow:0 2px 12px rgba(232,160,160,.2);
+}
+
+/* ════════ CARD ════════ */
+.card{
+  background:var(--w);border-radius:18px;
+  box-shadow:0 6px 30px rgba(0,0,0,.06);
+  width:340px;
+  overflow:visible;
+  position:relative;
+}
+
+/* header */
+.ch{display:flex;align-items:center;gap:8px;padding:10px 12px 7px}
+.cav{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--ps);flex-shrink:0;transition:background .4s;
+}
+.cm{flex:1;min-width:0}
+.cu{font-size:11px;font-weight:400;color:var(--bl);display:flex;align-items:center;gap:3px}
+.cu span[contenteditable]{border-bottom:1px solid transparent;transition:border-color .2s;cursor:text;outline:none}
+.cu span[contenteditable]:focus{border-bottom-color:var(--bl)}
+.vb{
+  width:12px;height:12px;border-radius:50%;background:var(--bl);
+  display:inline-flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;transition:opacity .2s;
+}
+.vb.off{opacity:.2}
+.vb svg{width:7px;height:7px}
+.cf{font-size:9px;color:var(--mt);margin-top:1px;transition:color .4s}
+.cf b{color:var(--tx);font-weight:500}
+
+/* image */
+.iw{
+  margin:0 10px;border-radius:12px;
+  overflow:visible;position:relative;
+  background:var(--pp);aspect-ratio:1/1;
+  cursor:default;transition:background .4s;
+}
+.ic{width:100%;height:100%;overflow:hidden;border-radius:12px;position:relative}
+.ii{width:100%;height:100%;transform-origin:center}
+.uimg{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;transition:transform .12s}
+
+.upl{
+  width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;cursor:pointer;
+  border:1.5px dashed rgba(232,160,160,.35);border-radius:12px;
+  transition:border-color .2s,background .2s;
+}
+.upl:hover{border-color:var(--p);background:rgba(255,200,200,.05)}
+.upl.over{border-color:var(--p);background:rgba(255,200,200,.1)}
+.upl svg{width:24px;height:24px;color:var(--ps);transition:color .4s}
+.upl-t{font-size:9px;color:var(--mt);text-align:center;letter-spacing:.4px;line-height:1.5}
+
+/* tags */
+.tag{
+  position:absolute;
+  background:rgba(232,160,160,.75);backdrop-filter:blur(6px);
+  color:#fff;font-size:10.5px;font-weight:400;
+  padding:3.5px 9px;border-radius:5px;
+  cursor:grab;white-space:nowrap;z-index:20;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  transition:box-shadow .15s,background .4s;letter-spacing:.2px;
+}
+.tag:hover{box-shadow:0 3px 12px rgba(0,0,0,.16)}
+.tag:active{cursor:grabbing}
+
+.zh{
+  position:absolute;bottom:5px;right:5px;
+  background:rgba(0,0,0,.25);color:rgba(255,255,255,.7);
+  font-size:8px;padding:2px 6px;border-radius:16px;
+  pointer-events:none;opacity:0;transition:opacity .3s;z-index:25;letter-spacing:.3px;
+}
+.iw:hover .zh{opacity:1}
+
+/* nav */
+.cnav{display:flex;justify-content:center;gap:20px;padding:10px 12px 12px;overflow:visible}
+.cni{display:flex;align-items:center;justify-content:center;width:22px;height:22px;overflow:visible}
+.cni svg{width:18px;height:18px;color:var(--p);transition:color .4s;overflow:visible;display:block}
+
+/* ════════ SIDE NAV ════════ */
+.side{
+  position:absolute;left:-32px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:10px;align-items:center;z-index:5;
+}
+.si{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55);transition:color .2s}
+.si:hover{color:rgba(255,255,255,.85)}
+.si svg{width:12px;height:12px}
+.sx{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(255,255,255,.4);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--p);margin-top:3px;
+}
+.sx svg{width:8px;height:8px}
+
+/* ════════ SEARCH ════════ */
+.sbar{
+  width:340px;display:flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.5);backdrop-filter:blur(8px);
+  border-radius:20px;padding:5px 10px;margin-top:8px;
+}
+.sbar svg{width:11px;height:11px;color:var(--mt);flex-shrink:0;transition:color .4s}
+.sbar input{
+  border:none;background:transparent;outline:none;
+  font-family:'Outfit',sans-serif;font-size:10.5px;color:var(--tx);
+  letter-spacing:.3px;width:100%;
+}
+
+/* ════════ BOTTOM CARD ════════ */
+.bc2{
+  width:340px;
+  background:rgba(255,255,255,.6);backdrop-filter:blur(10px);
+  border-radius:14px;padding:9px 11px;margin-top:6px;
+  display:flex;gap:8px;
+}
+.bav{width:32px;height:32px;border-radius:50%;background:var(--ps);flex-shrink:0;transition:background .4s}
+.bcc{flex:1;min-width:0}
+.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s}
+.bcu:focus{border-bottom-color:var(--bl)}
+.bcf{font-size:8.5px;color:var(--mt);margin:1px 0 3px;transition:color .4s}
+.bcf b{color:var(--tx);font-weight:500}
+.bio{font-size:9px;color:var(--mt);line-height:1.45;outline:none;cursor:text;display:block;transition:color .4s}
+
+/* ════════ TOOLBAR ════════ */
+.toolbar{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.88);backdrop-filter:blur(20px);
+  border-radius:50px;padding:6px 10px;
+  display:flex;align-items:center;gap:1px;
+  box-shadow:0 4px 24px rgba(0,0,0,.08),0 0 0 1px rgba(255,255,255,.5);
+  z-index:100;
+}
+.tb{
+  width:36px;height:36px;border-radius:50%;border:none;
+  background:transparent;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:#c0b0b0;transition:background .15s,color .15s,transform .1s;
+  position:relative;
+}
+.tb:hover{background:rgba(232,160,160,.1);color:var(--p);transform:scale(1.06)}
+.tb.on{color:var(--p);background:rgba(232,160,160,.12)}
+.tb svg{width:15px;height:15px}
+.tdv{width:1px;height:16px;background:rgba(0,0,0,.05);margin:0 2px;flex-shrink:0}
+
+.tt{
+  font-size:7.5px;letter-spacing:.7px;text-transform:uppercase;
+  color:#c0b0b0;position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;
+}
+.tb:hover .tt{opacity:1}
+
+/* ════════ PANELS ════════ */
+.panel{
+  position:fixed;bottom:72px;left:50%;
+  transform:translateX(-50%) translateY(6px);
+  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);
+  border-radius:14px;padding:12px 14px;
+  box-shadow:0 4px 24px rgba(0,0,0,.07),0 0 0 1px rgba(255,255,255,.5);
+  z-index:99;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;min-width:210px;
+}
+.panel.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+.pl{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#c0b0b0;font-weight:400;margin-bottom:8px}
+
+/* color rows */
+.cr{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.cr:last-child{margin-bottom:0}
+.cl{font-size:9.5px;color:#999;letter-spacing:.5px;flex:1;font-weight:400}
+.csw{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 5px rgba(0,0,0,.12);transition:transform .15s;flex-shrink:0}
+.csw:hover{transform:scale(1.12)}
+.chi{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+
+.tr{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.tr:last-child{margin-bottom:0}
+.tdt{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--p);transition:background .4s}
+.tdt.b{opacity:.5}
+.ti{flex:1;border:none;border-bottom:1px solid rgba(0,0,0,.05);background:transparent;font-family:'Outfit',sans-serif;font-size:11px;color:var(--tx);padding:2px 0;outline:none}
+.ti:focus{border-bottom-color:var(--p)}
+.trs{font-size:8px;color:#d0c0c0;cursor:pointer;padding:2px 4px;border-radius:3px;background:transparent;border:none;font-family:'Outfit',sans-serif;transition:color .15s}
+.trs:hover{color:#999}
+
+.pni{width:100%;border:none;border-bottom:1.5px solid rgba(0,0,0,.05);background:transparent;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--p);padding:2px 0;outline:none;letter-spacing:1px}
+.pni:focus{border-bottom-color:var(--p)}
+
+/* ════════ TOAST ════════ */
+.toast{
+  position:fixed;top:16px;left:50%;
+  transform:translateX(-50%) translateY(-44px);
+  background:rgba(60,40,40,.78);backdrop-filter:blur(10px);
+  color:#fff;font-size:11px;padding:6px 14px;border-radius:20px;
+  z-index:200;transition:transform .3s ease;pointer-events:none;letter-spacing:.3px;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+#fileIn{display:none}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:999;transition:opacity .12s}
+.flash.on{opacity:.5}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileIn" accept="image/*">
+
+<div class="scroll">
+<div id="capture">
+
+  <!-- PAIR NAME TOP -->
+  <div class="pn-top" contenteditable="true" spellcheck="false" id="pnT">PAIR NAME</div>
+
+  <!-- CARD -->
+  <div class="card" style="position:relative">
+    <!-- Side Nav -->
+    <div class="side">
+      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M9 21V12h6v9"/></svg></div>
+      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></div>
+      <div class="sx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+    </div>
+
+    <div class="ch">
+      <div class="cav"></div>
+      <div class="cm">
+        <div class="cu">
+          <span contenteditable="true" spellcheck="false" id="uA">@NAME_ID</span>
+          <span class="vb" id="vb"><svg viewBox="0 0 24 24" fill="#fff"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </div>
+        <div class="cf"><b>1</b> Followers <b>1</b> Following</div>
+      </div>
+    </div>
+
+    <div class="iw" id="imgWrap">
+      <div class="ic">
+        <div class="ii" id="imgInner">
+          <div class="upl" id="uplArea">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" opacity=".4"/><path d="M21 15l-5-5L5 21"/></svg>
+            <div class="upl-t">DROP IMAGE HERE<br>OR CLICK TO UPLOAD</div>
+          </div>
+        </div>
+      </div>
+      <div class="tag" id="tA" style="left:10px;bottom:24px">@NAME_ID</div>
+      <div class="tag" id="tB" style="right:10px;top:14px">@NAME_ID</div>
+      <div class="zh">SCROLL TO ZOOM</div>
+    </div>
+
+    <div class="cnav">
+      <div class="cni"><svg viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg></div>
+      <div class="cni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" overflow="visible"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg></div>
+      <div class="cni"><svg viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+      <div class="cni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" overflow="visible"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg></div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="sbar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
+    <input id="sIn" value="#PAIR NAME" spellcheck="false">
+  </div>
+
+  <!-- BOTTOM CARD -->
+  <div class="bc2">
+    <div class="bav"></div>
+    <div class="bcc">
+      <div class="bcu" contenteditable="true" spellcheck="false" id="uB">@NAME_ID</div>
+      <div class="bcf"><b>1</b> Followers <b>1</b> Following</div>
+      <span class="bio" contenteditable="true" spellcheck="false" id="bioT">TEXT TEXT TEXT TEXT TEXT TEXT TEXT<br>TEXT TEXT TEXT TEXT TEXT TEXT TEXT</span>
+    </div>
+  </div>
+
+</div><!-- #capture -->
+</div><!-- .scroll -->
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="tb" id="bCl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.5" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none"/></svg><span class="tt">COLOR</span></button>
+  <div class="tdv"></div>
+  <button class="tb" id="bUp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5-5L5 21"/></svg><span class="tt">IMAGE</span></button>
+  <button class="tb" id="bTg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg><span class="tt">TAGS</span></button>
+  <button class="tb" id="bPn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg><span class="tt">TITLE</span></button>
+  <div class="tdv"></div>
+  <button class="tb" id="bRs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg><span class="tt">RESET</span></button>
+  <button class="tb" id="bEx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="tt">SAVE</span></button>
+</div>
+
+<!-- PANELS -->
+<div class="panel" id="pCl">
+  <div class="pl">COLORS</div>
+  <div class="cr">
+    <span class="cl">BACKGROUND</span>
+    <div class="csw" id="csBg" style="background:#e8a0a0" onclick="this.nextElementSibling.click()"></div>
+    <input type="color" class="chi" id="ciBg" value="#e8a0a0">
+  </div>
+  <div class="cr">
+    <span class="cl">TAG A</span>
+    <div class="csw" id="csA" style="background:#e8a0a0" onclick="this.nextElementSibling.click()"></div>
+    <input type="color" class="chi" id="ciA" value="#e8a0a0">
+  </div>
+  <div class="cr">
+    <span class="cl">TAG B</span>
+    <div class="csw" id="csB" style="background:#c8a0b4" onclick="this.nextElementSibling.click()"></div>
+    <input type="color" class="chi" id="ciB" value="#c8a0b4">
+  </div>
+</div>
+<div class="panel" id="pTg">
+  <div class="pl">NAME TAGS</div>
+  <div class="tr">
+    <div class="tdt"></div>
+    <input class="ti" id="tiA" value="@NAME_ID" spellcheck="false">
+    <button class="trs" onclick="rstTag('A')">RESET</button>
+  </div>
+  <div class="tr">
+    <div class="tdt b"></div>
+    <input class="ti" id="tiB" value="@NAME_ID" spellcheck="false">
+    <button class="trs" onclick="rstTag('B')">RESET</button>
+  </div>
+</div>
+<div class="panel" id="pPn">
+  <div class="pl">PAIR NAME</div>
+  <input class="pni" id="pnI" value="PAIR NAME" spellcheck="false">
+</div>
+
+<script>
+const $=s=>document.getElementById(s);
+const cap=$('capture'),imgWrap=$('imgWrap'),imgInner=$('imgInner');
+const tA=$('tA'),tB=$('tB'),pnT=$('pnT');
+const fileIn=$('fileIn');
+let scale=1,imgSrc=null,activeP=null;
+
+/* ── Colors (3 separate) ── */
+function applyBgColor(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  const s=document.documentElement.style;
+  s.setProperty('--p',hex);
+  s.setProperty('--ps',`rgba(${r},${g},${b},.3)`);
+  s.setProperty('--pbg',`rgb(${Math.min(255,r+50)},${Math.min(255,g+50)},${Math.min(255,b+50)})`);
+  s.setProperty('--pp',`rgb(${Math.min(255,r+65)},${Math.min(255,g+65)},${Math.min(255,b+65)})`);
+  s.setProperty('--mt',`rgba(${r},${g},${b},.5)`);
+  $('bg').style.background=`rgb(${Math.min(255,r+50)},${Math.min(255,g+50)},${Math.min(255,b+50)})`;
+  document.querySelectorAll('.cav,.bav').forEach(el=>el.style.background=`rgba(${r},${g},${b},.25)`);
+  imgWrap.style.background=`rgb(${Math.min(255,r+65)},${Math.min(255,g+65)},${Math.min(255,b+65)})`;
+  $('csBg').style.background=hex;
+}
+function applyTagAColor(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  tA.style.background=`rgba(${r},${g},${b},.75)`;
+  $('csA').style.background=hex;
+}
+function applyTagBColor(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  tB.style.background=`rgba(${r},${g},${b},.75)`;
+  $('csB').style.background=hex;
+}
+$('ciBg').addEventListener('input',e=>applyBgColor(e.target.value));
+$('ciA').addEventListener('input',e=>applyTagAColor(e.target.value));
+$('ciB').addEventListener('input',e=>applyTagBColor(e.target.value));
+// init tag B with its default
+applyTagBColor('#c8a0b4');
+
+/* ── Panels ── */
+const panels={colors:$('pCl'),tags:$('pTg'),pname:$('pPn')};
+const pbtns={colors:$('bCl'),tags:$('bTg'),pname:$('bPn')};
+function togP(n){
+  if(activeP===n){panels[n].classList.remove('open');pbtns[n].classList.remove('on');activeP=null}
+  else{Object.keys(panels).forEach(k=>{panels[k].classList.remove('open');pbtns[k].classList.remove('on')});panels[n].classList.add('open');pbtns[n].classList.add('on');activeP=n}
+}
+$('bCl').onclick=()=>togP('colors');
+$('bTg').onclick=()=>togP('tags');
+$('bPn').onclick=()=>togP('pname');
+document.addEventListener('click',e=>{if(!e.target.closest('.panel')&&!e.target.closest('.tb')&&!e.target.closest('.csw')){Object.keys(panels).forEach(k=>{panels[k].classList.remove('open');pbtns[k]&&pbtns[k].classList.remove('on')});activeP=null}});
+
+/* ── Upload ── */
+$('bUp').onclick=()=>fileIn.click();
+$('uplArea').onclick=e=>{e.stopPropagation();fileIn.click()};
+fileIn.onchange=e=>{const f=e.target.files[0];if(f)loadImg(f)};
+
+imgWrap.addEventListener('dragover',e=>{e.preventDefault();const u=$('uplArea');u&&u.classList.add('over')});
+imgWrap.addEventListener('dragleave',()=>{const u=$('uplArea');u&&u.classList.remove('over')});
+imgWrap.addEventListener('drop',e=>{e.preventDefault();const u=$('uplArea');u&&u.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f)});
+
+function loadImg(f){const rd=new FileReader();rd.onload=ev=>{imgSrc=ev.target.result;renderImg();toast('IMAGE UPLOADED')};rd.readAsDataURL(f)}
+function renderImg(){imgInner.innerHTML=`<img class="uimg" id="uimgEl" src="${imgSrc}" draggable="false" style="transform:scale(${scale})">`}
+
+/* ── Zoom ── */
+imgWrap.addEventListener('wheel',e=>{if(!imgSrc)return;e.preventDefault();scale=Math.min(3,Math.max(.5,scale+(e.deltaY>0?-.06:.06)));const img=$('uimgEl');if(img)img.style.transform=`scale(${scale})`},{passive:false});
+
+/* ── Reset ── */
+$('bRs').onclick=()=>{
+  imgSrc=null;scale=1;
+  imgInner.innerHTML=`<div class="upl" id="uplArea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" opacity=".4"/><path d="M21 15l-5-5L5 21"/></svg><div class="upl-t">DROP IMAGE HERE<br>OR CLICK TO UPLOAD</div></div>`;
+  $('uplArea').onclick=e=>{e.stopPropagation();fileIn.click()};
+  toast('RESET');
+};
+
+/* ── Drag Tags (drag only) ── */
+function makeDrag(el){
+  let on=false,sx,sy,sl,st;
+  el.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    on=true;
+    const wr=imgWrap.getBoundingClientRect(),er=el.getBoundingClientRect();
+    sx=e.clientX;sy=e.clientY;sl=er.left-wr.left;st=er.top-wr.top;
+    el.style.left=sl+'px';el.style.top=st+'px';el.style.right='auto';el.style.bottom='auto';
+    el.style.cursor='grabbing';document.body.style.userSelect='none';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!on)return;
+    const wr=imgWrap.getBoundingClientRect();
+    el.style.left=Math.max(-60,Math.min(wr.width+20,sl+(e.clientX-sx)))+'px';
+    el.style.top=Math.max(-40,Math.min(wr.height+20,st+(e.clientY-sy)))+'px';
+  });
+  document.addEventListener('mouseup',()=>{if(on){on=false;el.style.cursor='grab';document.body.style.userSelect=''}});
+  el.addEventListener('touchstart',e=>{const t=e.touches[0];on=true;const wr=imgWrap.getBoundingClientRect(),er=el.getBoundingClientRect();sx=t.clientX;sy=t.clientY;sl=er.left-wr.left;st=er.top-wr.top;el.style.left=sl+'px';el.style.top=st+'px';el.style.right='auto';el.style.bottom='auto'},{passive:true});
+  el.addEventListener('touchmove',e=>{if(!on)return;e.preventDefault();const t=e.touches[0];const wr=imgWrap.getBoundingClientRect();el.style.left=Math.max(-60,Math.min(wr.width+20,sl+(t.clientX-sx)))+'px';el.style.top=Math.max(-40,Math.min(wr.height+20,st+(t.clientY-sy)))+'px'},{passive:false});
+  el.addEventListener('touchend',()=>{on=false});
+}
+makeDrag(tA);makeDrag(tB);
+function rstTag(w){if(w==='A'){tA.style.cssText='left:10px;bottom:24px;background:'+tA.style.background}else{tB.style.cssText='right:10px;top:14px;background:'+tB.style.background}}
+
+/* ── Sync ── */
+$('tiA').addEventListener('input',e=>{tA.textContent=e.target.value||'@NAME_ID';$('uA').textContent=e.target.value||'@NAME_ID'});
+$('tiB').addEventListener('input',e=>{tB.textContent=e.target.value||'@NAME_ID';$('uB').textContent=e.target.value||'@NAME_ID'});
+$('uA').addEventListener('input',function(){tA.textContent=this.textContent;$('tiA').value=this.textContent});
+$('uB').addEventListener('input',function(){tB.textContent=this.textContent;$('tiB').value=this.textContent});
+$('pnI').addEventListener('input',e=>{pnT.textContent=e.target.value||'PAIR NAME'});
+$('vb').onclick=function(){this.classList.toggle('off')};
+['uA','uB'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}})});
+
+/* ── Export (capture area only, with bg) ── */
+$('bEx').onclick=async()=>{
+  toast('SAVING...');
+  $('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
+
+  // create temp wrapper with bg color for export
+  const wrap=document.createElement('div');
+  const bgStyle=getComputedStyle($('bg')).background;
+  wrap.style.cssText=`position:fixed;left:-9999px;top:0;background:${bgStyle};padding:28px 40px 24px;border-radius:0;`;
+
+  // clone bg pattern
+  const bgClone=document.createElement('div');
+  bgClone.style.cssText=`position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.38) 1px,transparent 1px);background-size:12px 12px;pointer-events:none;`;
+  wrap.appendChild(bgClone);
+
+  const clone=cap.cloneNode(true);
+  clone.style.position='relative';
+  clone.style.zIndex='1';
+  // remove zoom hint
+  const zh=clone.querySelector('.zh');if(zh)zh.remove();
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
+
+  try{
+    const c=await html2canvas(wrap,{scale:3,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
+    const a=document.createElement('a');a.download='pair-frame.png';a.href=c.toDataURL('image/png');a.click();
+    toast('✓ SAVED AS PNG');
+  }catch(err){toast('ERROR: '+err.message)}
+  document.body.removeChild(wrap);
+};
+
+/* ── Toast ── */
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2000)}
+imgWrap.addEventListener('contextmenu',e=>e.preventDefault());
+</script>
+</body>
+</html>
