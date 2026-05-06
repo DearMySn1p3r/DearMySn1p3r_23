@@ -113,8 +113,8 @@ body{
   cursor:default;transition:background .4s;
 }
 .ic{width:100%;height:100%;overflow:hidden;border-radius:12px;position:relative}
-.ii{width:100%;height:100%;transform-origin:center}
-.uimg{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;transition:transform .12s}
+.ii{width:100%;height:100%;transform-origin:center;display:flex;align-items:center;justify-content:center}
+.uimg{display:block;pointer-events:none;transition:transform .12s;flex-shrink:0}
 
 .upl{
   width:100%;height:100%;display:flex;flex-direction:column;
@@ -173,7 +173,7 @@ body{
 .sbar{
   width:340px;display:flex;align-items:center;gap:5px;
   background:rgba(255,255,255,.5);backdrop-filter:blur(8px);
-  border-radius:20px;padding:5px 10px;margin-top:8px;
+  border-radius:20px;padding:5px 10px;margin-top:6px; /* 위 카드와 간격 추가 */
 }
 .sbar svg{width:11px;height:11px;color:var(--mt);flex-shrink:0;transition:color .4s}
 .sbar input{
@@ -186,12 +186,12 @@ body{
 .bc2{
   width:340px;
   background:rgba(255,255,255,.6);backdrop-filter:blur(10px);
-  border-radius:14px;padding:9px 11px;margin-top:6px;
+  border-radius:14px;padding:9px 11px;margin-top:12px; /* 검색칸과 간격 확보 */
   display:flex;gap:8px;
 }
 .bav{width:32px;height:32px;border-radius:50%;background:var(--ps);flex-shrink:0;transition:background .4s}
-.bcc{flex:1;min-width:0}
-.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s}
+.bcc{flex:1;min-width:0;margin-top:-2px}
+.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s;line-height:1}
 .bcu:focus{border-bottom-color:var(--bl)}
 .bcf{font-size:8.5px;color:var(--mt);margin:1px 0 3px;transition:color .4s}
 .bcf b{color:var(--tx);font-weight:500}
@@ -320,7 +320,7 @@ body{
       </div>
       <div class="tag" id="tA" style="left:10px;bottom:24px">@NAME_ID</div>
       <div class="tag" id="tB" style="right:10px;top:14px">@NAME_ID</div>
-      <div class="zh">SCROLL TO ZOOM</div>
+      <div class="zh">DRAG TO MOVE · SCROLL TO ZOOM</div>
     </div>
 
     <div class="cnav">
@@ -404,7 +404,7 @@ const $=s=>document.getElementById(s);
 const cap=$('capture'),imgWrap=$('imgWrap'),imgInner=$('imgInner');
 const tA=$('tA'),tB=$('tB'),pnT=$('pnT');
 const fileIn=$('fileIn');
-let scale=1,imgSrc=null,activeP=null;
+let scale=1,imgSrc=null,activeP=null,panX=0,panY=0,imgBaseStyle="";
 
 /* ── Colors (3 separate) ── */
 function applyBgColor(hex){
@@ -457,15 +457,80 @@ imgWrap.addEventListener('dragover',e=>{e.preventDefault();const u=$('uplArea');
 imgWrap.addEventListener('dragleave',()=>{const u=$('uplArea');u&&u.classList.remove('over')});
 imgWrap.addEventListener('drop',e=>{e.preventDefault();const u=$('uplArea');u&&u.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f)});
 
-function loadImg(f){const rd=new FileReader();rd.onload=ev=>{imgSrc=ev.target.result;renderImg();toast('IMAGE UPLOADED')};rd.readAsDataURL(f)}
-function renderImg(){imgInner.innerHTML=`<img class="uimg" id="uimgEl" src="${imgSrc}" draggable="false" style="transform:scale(${scale})">`}
+function loadImg(f){
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    const img = new Image();
+    img.onload = () => {
+      // 비율을 계산하여 가장 짧은 면을 화면에 딱 맞춤 (초강제 확대 방지)
+      if (img.width > img.height) {
+        imgBaseStyle = "height:100%; width:auto;";
+      } else {
+        imgBaseStyle = "width:100%; height:auto;";
+      }
+      imgSrc=ev.target.result; panX=0; panY=0; scale=1;
+      renderImg();
+      toast('IMAGE UPLOADED');
+    };
+    img.src = ev.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function applyImgTransform(){
+  const img=$('uimgEl');
+  if(img) img.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;
+}
+function renderImg(){
+  imgInner.innerHTML=`<img class="uimg" id="uimgEl" src="${imgSrc}" draggable="false" style="${imgBaseStyle} transform:translate(${panX}px,${panY}px) scale(${scale})">`;
+}
 
 /* ── Zoom ── */
-imgWrap.addEventListener('wheel',e=>{if(!imgSrc)return;e.preventDefault();scale=Math.min(3,Math.max(.5,scale+(e.deltaY>0?-.06:.06)));const img=$('uimgEl');if(img)img.style.transform=`scale(${scale})`},{passive:false});
+imgWrap.addEventListener('wheel',e=>{
+  if(!imgSrc)return;
+  e.preventDefault();
+  scale=Math.min(4,Math.max(1,scale+(e.deltaY>0?-.06:.06)));
+  applyImgTransform();
+},{passive:false});
+
+/* ── Pan (drag image to move it inside square viewport) ── */
+let panOn=false,panSx,panSy,panSpx,panSpy;
+imgWrap.addEventListener('mousedown',e=>{
+  if(!imgSrc)return;
+  if(e.target.closest('.tag'))return; // ignore tag drags
+  e.preventDefault();
+  panOn=true;
+  panSx=e.clientX;panSy=e.clientY;
+  panSpx=panX;panSpy=panY;
+  imgWrap.style.cursor='grabbing';
+});
+document.addEventListener('mousemove',e=>{
+  if(!panOn)return;
+  panX=panSpx+(e.clientX-panSx);
+  panY=panSpy+(e.clientY-panSy);
+  applyImgTransform();
+});
+document.addEventListener('mouseup',()=>{if(panOn){panOn=false;imgWrap.style.cursor='default'}});
+
+// touch
+imgWrap.addEventListener('touchstart',e=>{
+  if(!imgSrc)return;
+  if(e.target.closest('.tag'))return;
+  const t=e.touches[0];
+  panOn=true;panSx=t.clientX;panSy=t.clientY;panSpx=panX;panSpy=panY;
+},{passive:true});
+imgWrap.addEventListener('touchmove',e=>{
+  if(!panOn)return;
+  e.preventDefault();
+  const t=e.touches[0];
+  panX=panSpx+(t.clientX-panSx);
+  panY=panSpy+(t.clientY-panSy);
+  applyImgTransform();
+},{passive:false});
+imgWrap.addEventListener('touchend',()=>{panOn=false});
 
 /* ── Reset ── */
 $('bRs').onclick=()=>{
-  imgSrc=null;scale=1;
+  imgSrc=null;scale=1;panX=0;panY=0;imgBaseStyle="";
   imgInner.innerHTML=`<div class="upl" id="uplArea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" opacity=".4"/><path d="M21 15l-5-5L5 21"/></svg><div class="upl-t">DROP IMAGE HERE<br>OR CLICK TO UPLOAD</div></div>`;
   $('uplArea').onclick=e=>{e.stopPropagation();fileIn.click()};
   toast('RESET');
@@ -505,36 +570,134 @@ $('pnI').addEventListener('input',e=>{pnT.textContent=e.target.value||'PAIR NAME
 $('vb').onclick=function(){this.classList.toggle('off')};
 ['uA','uB'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}})});
 
-/* ── Export (capture area only, with bg) ── */
+/* ── Export ── */
 $('bEx').onclick=async()=>{
   toast('SAVING...');
   $('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
 
-  // create temp wrapper with bg color for export
+  const PAD=32, SC=5;
+  const iwRect=imgWrap.getBoundingClientRect();
+  const capRect=cap.getBoundingClientRect();
+  const bgColor=getComputedStyle($('bg')).backgroundColor;
+
+  // Off-screen wrapper
   const wrap=document.createElement('div');
-  const bgStyle=getComputedStyle($('bg')).background;
-  wrap.style.cssText=`position:fixed;left:-9999px;top:0;background:${bgStyle};padding:28px 40px 24px;border-radius:0;`;
+  wrap.style.cssText=`position:fixed;left:-9999px;top:0;width:${Math.round(capRect.width+PAD*2)}px;background:${bgColor};padding:${PAD}px;box-sizing:border-box;`;
 
-  // clone bg pattern
-  const bgClone=document.createElement('div');
-  bgClone.style.cssText=`position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.38) 1px,transparent 1px);background-size:12px 12px;pointer-events:none;`;
-  wrap.appendChild(bgClone);
+  // Dot pattern (PNG, html2canvas-safe)
+  const patCanvas=document.createElement('canvas');
+  patCanvas.width=12;patCanvas.height=12;
+  const pctx=patCanvas.getContext('2d');
+  pctx.fillStyle='rgba(255,255,255,0.55)';
+  pctx.beginPath();pctx.arc(6,6,1.3,0,Math.PI*2);pctx.fill();
+  const patUri=patCanvas.toDataURL('image/png');
 
+  const dots=document.createElement('div');
+  dots.style.cssText=`position:absolute;inset:0;background-image:url("${patUri}");background-size:12px 12px;background-repeat:repeat;pointer-events:none;`;
+  wrap.appendChild(dots);
+
+  // Clone
   const clone=cap.cloneNode(true);
-  clone.style.position='relative';
-  clone.style.zIndex='1';
-  // remove zoom hint
-  const zh=clone.querySelector('.zh');if(zh)zh.remove();
+  clone.style.cssText='position:relative;z-index:1;';
+
+  // FORCE SQUARE on cloned image area
+  const cloneIw=clone.querySelector('#imgWrap');
+  if(cloneIw){
+    cloneIw.style.width=iwRect.width+'px';
+    cloneIw.style.height=iwRect.width+'px';
+    cloneIw.style.aspectRatio='1/1';
+  }
+
+  // Pre-render the photo at high resolution into a canvas, convert to data URL,
+  // then replace <img> with a NEW <img> using that data URL.
+  // (html2canvas handles <img src="data:..."> reliably; it's flaky with raw <canvas> elements.)
+  const cloneImg=clone.querySelector('#uimgEl');
+  if(cloneImg && imgSrc){
+    const tmp=new Image();
+    tmp.src=imgSrc;
+    await new Promise(r=>{tmp.onload=r;tmp.onerror=r});
+
+    if(tmp.naturalWidth>0){
+      const outSize=Math.round(iwRect.width*SC);
+      const hcnv=document.createElement('canvas');
+      hcnv.width=outSize;hcnv.height=outSize;
+      const hctx=hcnv.getContext('2d');
+      hctx.imageSmoothingEnabled=true;
+      hctx.imageSmoothingQuality='high';
+
+      // object-fit:cover crop with zoom + pan
+      const z=scale;
+      const iR=tmp.naturalWidth/tmp.naturalHeight;
+      let srcSize;
+      if(iR>=1) srcSize=tmp.naturalHeight/z;
+      else srcSize=tmp.naturalWidth/z;
+      // pan: convert display-px offset to source-px offset (negate because image moves opposite to crop)
+      const panSrcX=panX*srcSize/iwRect.width;
+      const panSrcY=panY*srcSize/iwRect.width;
+      const srcX=(tmp.naturalWidth-srcSize)/2 - panSrcX;
+      const srcY=(tmp.naturalHeight-srcSize)/2 - panSrcY;
+
+      hctx.drawImage(tmp,srcX,srcY,srcSize,srcSize,0,0,outSize,outSize);
+
+      // Convert to data URL
+      const photoUri=hcnv.toDataURL('image/png');
+
+      // Replace with regular img tag (html2canvas-friendly)
+      const newImg=document.createElement('img');
+      newImg.src=photoUri;
+      newImg.crossOrigin='anonymous';
+      newImg.style.cssText='width:100%;height:100%;display:block;object-fit:fill;';
+      cloneImg.parentNode.replaceChild(newImg,cloneImg);
+
+      // Wait for the replacement img to load
+      await new Promise(r=>{newImg.onload=r;newImg.onerror=r;if(newImg.complete)r()});
+    }
+  }
+
+  clone.querySelectorAll('.zh').forEach(el=>el.remove());
+
+  // Fix html2canvas text-alignment quirk: replace <input> with <div> in search bar
+  const sInClone=clone.querySelector('#sIn');
+  if(sInClone){
+    const div=document.createElement('div');
+    div.textContent=sInClone.value;
+    div.style.cssText='border:none;background:transparent;font-family:Outfit,sans-serif;font-size:11px;color:'+getComputedStyle(sInClone).color+';letter-spacing:.3px;width:100%;line-height:1.4;';
+    sInClone.parentNode.replaceChild(div,sInClone);
+  }
+
+  // Force explicit line-height on text containers (html2canvas baseline quirk)
+  clone.querySelectorAll('.cu,.bcu,.bio,.cf,.bcf,.pn-top').forEach(el=>{
+    el.style.lineHeight='1.5';
+  });
+
   wrap.appendChild(clone);
   document.body.appendChild(wrap);
+  await new Promise(r=>setTimeout(r,150));
 
   try{
-    const c=await html2canvas(wrap,{scale:3,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
-    const a=document.createElement('a');a.download='pair-frame.png';a.href=c.toDataURL('image/png');a.click();
+    const c=await html2canvas(wrap,{
+      scale:SC,useCORS:true,allowTaint:true,
+      backgroundColor:null,logging:false,
+      width:wrap.offsetWidth,height:wrap.offsetHeight,
+      imageTimeout:0
+    });
+    const a=document.createElement('a');
+    a.download='pair-frame.png';
+    a.href=c.toDataURL('image/png',1.0);
+    a.click();
     toast('✓ SAVED AS PNG');
-  }catch(err){toast('ERROR: '+err.message)}
+  }catch(err){toast('ERROR: '+err.message);console.error(err)}
   document.body.removeChild(wrap);
 };
+
+/* ── Plain text paste (strip formatting) ── */
+document.querySelectorAll('[contenteditable]').forEach(el=>{
+  el.addEventListener('paste',e=>{
+    e.preventDefault();
+    const text=(e.clipboardData||window.clipboardData).getData('text/plain');
+    document.execCommand('insertText',false,text);
+  });
+});
 
 /* ── Toast ── */
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2000)}
