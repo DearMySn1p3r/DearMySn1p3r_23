@@ -3,705 +3,286 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pair Frame</title>
+<title>Pair Frame - Refined</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,400;1,600&family=Outfit:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#e8a0a0;--ps:rgba(232,160,160,.3);--pbg:#f8d4d4;
-  --pp:#fdf0f0;--w:#fff;--tx:#3a2828;--mt:#c0a0a0;--bl:#5b9bd5;
+  --p:#e8a0a0;--ps:rgba(232,160,160,.2);--pbg:#fbe8e8;
+  --pp:#fff5f5;--w:#fff;--tx:#4a3a3a;--mt:#d2b4b4;--bl:#5b9bd5;
 }
 html,body{height:100%;overflow:hidden}
 body{
   font-family:'Outfit','Noto Sans KR',sans-serif;
   background:var(--pp);
   display:flex;align-items:center;justify-content:center;
-  transition:background .4s;
 }
 
-/* ════════ FULL BG ════════ */
+/* ════════ BACKGROUND (은은한 도트) ════════ */
 .bg{
   position:fixed;inset:0;
   background:var(--pbg);
-  transition:background .4s;
   z-index:0;
 }
 .bg::before{
   content:'';position:absolute;inset:0;
-  background-image:radial-gradient(circle,rgba(255,255,255,.38) 1px,transparent 1px);
-  background-size:12px 12px;pointer-events:none;
+  /* 도트 색상을 더 연하게(0.15) 조정 */
+  background-image:radial-gradient(circle,rgba(255,255,255,.15) 1.2px,transparent 1.2px);
+  background-size:14px 14px;
 }
-/* sparkle dots */
-.bg::after{
-  content:'';position:absolute;inset:0;
-  background-image:
-    radial-gradient(circle,rgba(255,255,255,.7) 1px,transparent 1px),
-    radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1px);
-  background-size:80px 80px,120px 120px;
-  background-position:20px 20px,60px 40px;
-  pointer-events:none;
-  animation:sparkle 4s ease-in-out infinite alternate;
-}
-@keyframes sparkle{0%{opacity:.4}100%{opacity:.8}}
 
-/* ════════ SCROLL WRAPPER ════════ */
 .scroll{
   position:relative;z-index:1;
   width:100%;height:100%;
-  overflow-y:auto;overflow-x:hidden;
-  display:flex;align-items:flex-start;justify-content:center;
-  padding:24px 16px 110px;
+  overflow-y:auto;
+  display:flex;justify-content:center;
+  padding:40px 16px 120px;
   scrollbar-width:none;
 }
 .scroll::-webkit-scrollbar{display:none}
 
-/* ════════ CAPTURE AREA (for export) ════════ */
 #capture{
   display:flex;flex-direction:column;align-items:center;
   width:400px;flex-shrink:0;
-  padding:20px 0 16px;
 }
 
-/* ════════ PAIR NAME TOP ════════ */
+/* PAIR NAME TOP */
 .pn-top{
   font-family:'Cormorant Garamond',serif;
   font-style:italic;font-weight:600;font-size:32px;
-  letter-spacing:2px;line-height:1;
-  color:rgba(255,255,255,.55);
-  text-align:center;
-  margin-bottom:14px;
-  cursor:text;outline:none;
-  transition:color .4s;
-  text-shadow:0 2px 12px rgba(232,160,160,.2);
+  letter-spacing:2px;color:rgba(255,255,255,.6);
+  margin-bottom:18px; /* 간격 확보 */
+  outline:none;
 }
 
-/* ════════ CARD ════════ */
+/* CARD AREA */
 .card{
-  background:var(--w);border-radius:18px;
-  box-shadow:0 6px 30px rgba(0,0,0,.06);
-  width:340px;
-  overflow:visible;
-  position:relative;
+  background:var(--w);border-radius:22px;
+  box-shadow:0 10px 40px rgba(0,0,0,.04);
+  width:340px;position:relative;
 }
 
-/* header */
-.ch{display:flex;align-items:center;gap:8px;padding:10px 12px 7px}
-.cav{
-  width:30px;height:30px;border-radius:50%;
-  background:var(--ps);flex-shrink:0;transition:background .4s;
-}
-.cm{flex:1;min-width:0}
-.cu{font-size:11px;font-weight:400;color:var(--bl);display:flex;align-items:center;gap:3px}
-.cu span[contenteditable]{border-bottom:1px solid transparent;transition:border-color .2s;cursor:text;outline:none}
-.cu span[contenteditable]:focus{border-bottom-color:var(--bl)}
-.vb{
-  width:12px;height:12px;border-radius:50%;background:var(--bl);
-  display:inline-flex;align-items:center;justify-content:center;
-  flex-shrink:0;cursor:pointer;transition:opacity .2s;
-}
-.vb.off{opacity:.2}
-.vb svg{width:7px;height:7px}
-.cf{font-size:9px;color:var(--mt);margin-top:1px;transition:color .4s}
-.cf b{color:var(--tx);font-weight:500}
+.ch{display:flex;align-items:center;gap:10px;padding:12px 14px 8px}
+.cav{width:34px;height:34px;border-radius:50%;background:var(--ps)}
+.cu{font-size:12px;font-weight:500;color:var(--bl);display:flex;align-items:center;gap:4px}
+.cf{font-size:10px;color:var(--mt);margin-top:2px}
+.cf b{color:var(--tx)}
 
-/* image */
+/* IMAGE BOX - 꽉 차게, 억지로 늘리지 않음 */
 .iw{
-  margin:0 10px;border-radius:12px;
-  overflow:visible;position:relative;
-  background:var(--pp);aspect-ratio:1/1;
-  cursor:default;transition:background .4s;
+  margin:0 12px;border-radius:14px;
+  background:#f9f9f9;aspect-ratio:1/1;
+  overflow:hidden;position:relative;
 }
-.ic{width:100%;height:100%;overflow:hidden;border-radius:12px;position:relative}
-.ii{width:100%;height:100%;transform-origin:center;display:flex;align-items:center;justify-content:center}
-.uimg{display:block;pointer-events:none;transition:transform .12s;flex-shrink:0}
-
-.upl{
-  width:100%;height:100%;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px;cursor:pointer;
-  border:1.5px dashed rgba(232,160,160,.35);border-radius:12px;
-  transition:border-color .2s,background .2s;
+.ii{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.uimg{
+  /* 비율 유지하며 꽉 채움 */
+  width:100%;height:100%;object-fit:cover;
+  display:block;
 }
-.upl:hover{border-color:var(--p);background:rgba(255,200,200,.05)}
-.upl.over{border-color:var(--p);background:rgba(255,200,200,.1)}
-.upl svg{width:24px;height:24px;color:var(--ps);transition:color .4s}
-.upl-t{font-size:9px;color:var(--mt);text-align:center;letter-spacing:.4px;line-height:1.5}
 
-/* tags */
+/* TAGS */
 .tag{
   position:absolute;
-  background:rgba(232,160,160,.75);backdrop-filter:blur(6px);
-  color:#fff;font-size:10.5px;font-weight:400;
-  padding:3.5px 9px;border-radius:5px;
-  cursor:grab;white-space:nowrap;z-index:20;
-  box-shadow:0 2px 8px rgba(0,0,0,.1);
-  transition:box-shadow .15s,background .4s;letter-spacing:.2px;
+  background:rgba(232,160,160,.8);backdrop-filter:blur(4px);
+  color:#fff;font-size:11px;padding:4px 10px;border-radius:6px;
+  cursor:grab;z-index:10;box-shadow:0 2px 10px rgba(0,0,0,.05);
 }
-.tag:hover{box-shadow:0 3px 12px rgba(0,0,0,.16)}
-.tag:active{cursor:grabbing}
 
-.zh{
-  position:absolute;bottom:5px;right:5px;
-  background:rgba(0,0,0,.25);color:rgba(255,255,255,.7);
-  font-size:8px;padding:2px 6px;border-radius:16px;
-  pointer-events:none;opacity:0;transition:opacity .3s;z-index:25;letter-spacing:.3px;
-}
-.iw:hover .zh{opacity:1}
+.cnav{display:flex;justify-content:center;gap:22px;padding:14px}
+.cni svg{width:20px;height:20px;color:var(--p)}
 
-/* nav */
-.cnav{display:flex;justify-content:center;gap:20px;padding:10px 12px 12px;overflow:visible}
-.cni{display:flex;align-items:center;justify-content:center;width:22px;height:22px;overflow:visible}
-.cni svg{width:18px;height:18px;color:var(--p);transition:color .4s;overflow:visible;display:block}
-
-/* ════════ SIDE NAV ════════ */
-.side{
-  position:absolute;left:-32px;top:50%;transform:translateY(-50%);
-  display:flex;flex-direction:column;gap:10px;align-items:center;z-index:5;
-}
-.si{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.55);transition:color .2s}
-.si:hover{color:rgba(255,255,255,.85)}
-.si svg{width:12px;height:12px}
-.sx{
-  width:20px;height:20px;border-radius:50%;
-  background:rgba(255,255,255,.4);backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--p);margin-top:3px;
-}
-.sx svg{width:8px;height:8px}
-
-/* ════════ SEARCH ════════ */
+/* SEARCH BAR */
 .sbar{
-  width:340px;display:flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,.5);backdrop-filter:blur(8px);
-  border-radius:20px;padding:5px 10px;margin-top:6px; /* 위 카드와 간격 추가 */
+  width:340px;display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.6);backdrop-filter:blur(10px);
+  border-radius:25px;padding:8px 14px;
+  margin-top:14px; /* PAIR NAME과 피드 사이 공백 */
 }
-.sbar svg{width:11px;height:11px;color:var(--mt);flex-shrink:0;transition:color .4s}
+.sbar svg{width:12px;height:12px;color:var(--mt)}
 .sbar input{
   border:none;background:transparent;outline:none;
-  font-family:'Outfit',sans-serif;font-size:10.5px;color:var(--tx);
-  letter-spacing:.3px;width:100%;
+  font-size:11px;color:var(--tx);width:100%;
 }
 
-/* ════════ BOTTOM CARD ════════ */
+/* FEED / PROFILE BOX */
 .bc2{
   width:340px;
-  background:rgba(255,255,255,.6);backdrop-filter:blur(10px);
-  border-radius:14px;padding:9px 11px;margin-top:12px; /* 검색칸과 간격 확보 */
-  display:flex;gap:8px;
+  background:rgba(255,255,255,.7);backdrop-filter:blur(10px);
+  border-radius:18px;padding:12px;margin-top:14px;
+  display:flex;gap:10px;
 }
-.bav{width:32px;height:32px;border-radius:50%;background:var(--ps);flex-shrink:0;transition:background .4s}
-.bcc{flex:1;min-width:0;margin-top:-2px}
-.bcu{font-size:10.5px;font-weight:400;color:var(--bl);display:inline-block;outline:none;cursor:text;border-bottom:1px solid transparent;transition:border-color .2s;line-height:1}
-.bcu:focus{border-bottom-color:var(--bl)}
-.bcf{font-size:8.5px;color:var(--mt);margin:1px 0 3px;transition:color .4s}
-.bcf b{color:var(--tx);font-weight:500}
-.bio{font-size:9px;color:var(--mt);line-height:1.45;outline:none;cursor:text;display:block;transition:color .4s}
+.bav{width:40px;height:40px;border-radius:50%;background:var(--ps)}
+.bcu{font-size:12px;font-weight:500;color:var(--bl);outline:none}
+.bcf{font-size:10px;color:var(--mt);margin:2px 0 4px}
+.bio{font-size:10px;color:var(--mt);line-height:1.5;outline:none}
 
-/* ════════ TOOLBAR ════════ */
+/* ════════ TOOLBAR (캡쳐 시 제외) ════════ */
 .toolbar{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:rgba(255,255,255,.88);backdrop-filter:blur(20px);
-  border-radius:50px;padding:6px 10px;
-  display:flex;align-items:center;gap:1px;
-  box-shadow:0 4px 24px rgba(0,0,0,.08),0 0 0 1px rgba(255,255,255,.5);
-  z-index:100;
+  position:fixed;bottom:25px;left:50%;transform:translateX(-50%);
+  background:#fff;border-radius:50px;padding:8px 16px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 30px rgba(0,0,0,.1);z-index:100;
 }
 .tb{
-  width:36px;height:36px;border-radius:50%;border:none;
-  background:transparent;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:#c0b0b0;transition:background .15s,color .15s,transform .1s;
-  position:relative;
+  background:var(--p);color:#fff;border:none;padding:8px 16px;
+  border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;
+  transition:transform .2s;
 }
-.tb:hover{background:rgba(232,160,160,.1);color:var(--p);transform:scale(1.06)}
-.tb.on{color:var(--p);background:rgba(232,160,160,.12)}
-.tb svg{width:15px;height:15px}
-.tdv{width:1px;height:16px;background:rgba(0,0,0,.05);margin:0 2px;flex-shrink:0}
-
-.tt{
-  font-size:7.5px;letter-spacing:.7px;text-transform:uppercase;
-  color:#c0b0b0;position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);
-  white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;
-}
-.tb:hover .tt{opacity:1}
-
-/* ════════ PANELS ════════ */
-.panel{
-  position:fixed;bottom:72px;left:50%;
-  transform:translateX(-50%) translateY(6px);
-  background:rgba(255,255,255,.92);backdrop-filter:blur(20px);
-  border-radius:14px;padding:12px 14px;
-  box-shadow:0 4px 24px rgba(0,0,0,.07),0 0 0 1px rgba(255,255,255,.5);
-  z-index:99;opacity:0;pointer-events:none;
-  transition:opacity .2s,transform .2s;min-width:210px;
-}
-.panel.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
-.pl{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#c0b0b0;font-weight:400;margin-bottom:8px}
-
-/* color rows */
-.cr{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.cr:last-child{margin-bottom:0}
-.cl{font-size:9.5px;color:#999;letter-spacing:.5px;flex:1;font-weight:400}
-.csw{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 5px rgba(0,0,0,.12);transition:transform .15s;flex-shrink:0}
-.csw:hover{transform:scale(1.12)}
-.chi{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
-
-.tr{display:flex;align-items:center;gap:5px;margin-bottom:5px}
-.tr:last-child{margin-bottom:0}
-.tdt{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--p);transition:background .4s}
-.tdt.b{opacity:.5}
-.ti{flex:1;border:none;border-bottom:1px solid rgba(0,0,0,.05);background:transparent;font-family:'Outfit',sans-serif;font-size:11px;color:var(--tx);padding:2px 0;outline:none}
-.ti:focus{border-bottom-color:var(--p)}
-.trs{font-size:8px;color:#d0c0c0;cursor:pointer;padding:2px 4px;border-radius:3px;background:transparent;border:none;font-family:'Outfit',sans-serif;transition:color .15s}
-.trs:hover{color:#999}
-
-.pni{width:100%;border:none;border-bottom:1.5px solid rgba(0,0,0,.05);background:transparent;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:var(--p);padding:2px 0;outline:none;letter-spacing:1px}
-.pni:focus{border-bottom-color:var(--p)}
-
-/* ════════ TOAST ════════ */
-.toast{
-  position:fixed;top:16px;left:50%;
-  transform:translateX(-50%) translateY(-44px);
-  background:rgba(60,40,40,.78);backdrop-filter:blur(10px);
-  color:#fff;font-size:11px;padding:6px 14px;border-radius:20px;
-  z-index:200;transition:transform .3s ease;pointer-events:none;letter-spacing:.3px;
-}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.tb:hover{transform:translateY(-2px)}
+.tb.sub{background:#f0f0f0;color:#888}
 
 #fileIn{display:none}
-.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:999;transition:opacity .12s}
-.flash.on{opacity:.5}
-
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.toast{
+  position:fixed;top:20px;background:rgba(0,0,0,.7);color:#fff;
+  padding:8px 16px;border-radius:10px;font-size:12px;opacity:0;transition:0.3s;
+}
 </style>
 </head>
 <body>
 
 <div class="bg" id="bg"></div>
-<div class="flash" id="flash"></div>
 <div class="toast" id="toast"></div>
 <input type="file" id="fileIn" accept="image/*">
 
 <div class="scroll">
-<div id="capture">
+  <div id="capture">
+    <!-- 상단 텍스트 -->
+    <div class="pn-top" contenteditable="true">PAIR NAME</div>
 
-  <!-- PAIR NAME TOP -->
-  <div class="pn-top" contenteditable="true" spellcheck="false" id="pnT">PAIR NAME</div>
-
-  <!-- CARD -->
-  <div class="card" style="position:relative">
-    <!-- Side Nav -->
-    <div class="side">
-      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M9 21V12h6v9"/></svg></div>
-      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
-      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
-      <div class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></div>
-      <div class="sx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
-    </div>
-
-    <div class="ch">
-      <div class="cav"></div>
-      <div class="cm">
-        <div class="cu">
-          <span contenteditable="true" spellcheck="false" id="uA">@NAME_ID</span>
-          <span class="vb" id="vb"><svg viewBox="0 0 24 24" fill="#fff"><polyline points="20 6 9 17 4 12"/></svg></span>
+    <!-- 메인 카드 -->
+    <div class="card">
+      <div class="ch">
+        <div class="cav"></div>
+        <div>
+          <div class="cu">@NAME_ID</div>
+          <div class="cf"><b>1</b> Followers <b>1</b> Following</div>
         </div>
-        <div class="cf"><b>1</b> Followers <b>1</b> Following</div>
       </div>
-    </div>
 
-    <div class="iw" id="imgWrap">
-      <div class="ic">
+      <div class="iw">
         <div class="ii" id="imgInner">
-          <div class="upl" id="uplArea">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" opacity=".4"/><path d="M21 15l-5-5L5 21"/></svg>
-            <div class="upl-t">DROP IMAGE HERE<br>OR CLICK TO UPLOAD</div>
-          </div>
+          <div style="color:#ddd; font-size:12px;">No Image Selected</div>
+        </div>
+        <div class="tag" style="left:15px; bottom:20px;">@NAME_ID</div>
+        <div class="tag" style="right:15px; top:15px;">@NAME_ID</div>
+      </div>
+
+      <div class="cnav">
+        <div class="cni"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+        <div class="cni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg></div>
+      </div>
+    </div>
+
+    <!-- 검색바 -->
+    <div class="sbar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
+      <input value="#PAIR NAME">
+    </div>
+
+    <!-- 하단 피드 박스 -->
+    <div class="bc2">
+      <div class="bav"></div>
+      <div>
+        <div class="bcu" contenteditable="true">@NAME_ID</div>
+        <div class="bcf"><b>1</b> Followers <b>1</b> Following</div>
+        <div class="bio" contenteditable="true">
+          TEXT TEXT TEXT TEXT TEXT TEXT TEXT<br>
+          TEXT TEXT TEXT TEXT TEXT TEXT TEXT
         </div>
       </div>
-      <div class="tag" id="tA" style="left:10px;bottom:24px">@NAME_ID</div>
-      <div class="tag" id="tB" style="right:10px;top:14px">@NAME_ID</div>
-      <div class="zh">DRAG TO MOVE · SCROLL TO ZOOM</div>
-    </div>
-
-    <div class="cnav">
-      <div class="cni"><svg viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg></div>
-      <div class="cni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" overflow="visible"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg></div>
-      <div class="cni"><svg viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
-      <div class="cni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" overflow="visible"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg></div>
     </div>
   </div>
+</div>
 
-  <!-- SEARCH -->
-  <div class="sbar">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
-    <input id="sIn" value="#PAIR NAME" spellcheck="false">
-  </div>
-
-  <!-- BOTTOM CARD -->
-  <div class="bc2">
-    <div class="bav"></div>
-    <div class="bcc">
-      <div class="bcu" contenteditable="true" spellcheck="false" id="uB">@NAME_ID</div>
-      <div class="bcf"><b>1</b> Followers <b>1</b> Following</div>
-      <span class="bio" contenteditable="true" spellcheck="false" id="bioT">TEXT TEXT TEXT TEXT TEXT TEXT TEXT<br>TEXT TEXT TEXT TEXT TEXT TEXT TEXT</span>
-    </div>
-  </div>
-
-</div><!-- #capture -->
-</div><!-- .scroll -->
-
-<!-- TOOLBAR -->
+<!-- 하단 도구 모음 (캡쳐 안됨) -->
 <div class="toolbar">
-  <button class="tb" id="bCl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="7" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.5" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="13" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.5" fill="currentColor" stroke="none"/></svg><span class="tt">COLOR</span></button>
-  <div class="tdv"></div>
-  <button class="tb" id="bUp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5-5L5 21"/></svg><span class="tt">IMAGE</span></button>
-  <button class="tb" id="bTg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg><span class="tt">TAGS</span></button>
-  <button class="tb" id="bPn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg><span class="tt">TITLE</span></button>
-  <div class="tdv"></div>
-  <button class="tb" id="bRs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg><span class="tt">RESET</span></button>
-  <button class="tb" id="bEx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="tt">SAVE</span></button>
-</div>
-
-<!-- PANELS -->
-<div class="panel" id="pCl">
-  <div class="pl">COLORS</div>
-  <div class="cr">
-    <span class="cl">BACKGROUND</span>
-    <div class="csw" id="csBg" style="background:#e8a0a0" onclick="this.nextElementSibling.click()"></div>
-    <input type="color" class="chi" id="ciBg" value="#e8a0a0">
-  </div>
-  <div class="cr">
-    <span class="cl">TAG A</span>
-    <div class="csw" id="csA" style="background:#e8a0a0" onclick="this.nextElementSibling.click()"></div>
-    <input type="color" class="chi" id="ciA" value="#e8a0a0">
-  </div>
-  <div class="cr">
-    <span class="cl">TAG B</span>
-    <div class="csw" id="csB" style="background:#c8a0b4" onclick="this.nextElementSibling.click()"></div>
-    <input type="color" class="chi" id="ciB" value="#c8a0b4">
-  </div>
-</div>
-<div class="panel" id="pTg">
-  <div class="pl">NAME TAGS</div>
-  <div class="tr">
-    <div class="tdt"></div>
-    <input class="ti" id="tiA" value="@NAME_ID" spellcheck="false">
-    <button class="trs" onclick="rstTag('A')">RESET</button>
-  </div>
-  <div class="tr">
-    <div class="tdt b"></div>
-    <input class="ti" id="tiB" value="@NAME_ID" spellcheck="false">
-    <button class="trs" onclick="rstTag('B')">RESET</button>
-  </div>
-</div>
-<div class="panel" id="pPn">
-  <div class="pl">PAIR NAME</div>
-  <input class="pni" id="pnI" value="PAIR NAME" spellcheck="false">
+  <button class="tb sub" onclick="document.getElementById('fileIn').click()">사진 변경</button>
+  <button class="tb" onclick="exportImg()">이미지 저장 (PNG)</button>
 </div>
 
 <script>
-const $=s=>document.getElementById(s);
-const cap=$('capture'),imgWrap=$('imgWrap'),imgInner=$('imgInner');
-const tA=$('tA'),tB=$('tB'),pnT=$('pnT');
-const fileIn=$('fileIn');
-let scale=1,imgSrc=null,activeP=null,panX=0,panY=0,imgBaseStyle="";
+const fileIn = document.getElementById('fileIn');
+const imgInner = document.getElementById('imgInner');
 
-/* ── Colors (3 separate) ── */
-function applyBgColor(hex){
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  const s=document.documentElement.style;
-  s.setProperty('--p',hex);
-  s.setProperty('--ps',`rgba(${r},${g},${b},.3)`);
-  s.setProperty('--pbg',`rgb(${Math.min(255,r+50)},${Math.min(255,g+50)},${Math.min(255,b+50)})`);
-  s.setProperty('--pp',`rgb(${Math.min(255,r+65)},${Math.min(255,g+65)},${Math.min(255,b+65)})`);
-  s.setProperty('--mt',`rgba(${r},${g},${b},.5)`);
-  $('bg').style.background=`rgb(${Math.min(255,r+50)},${Math.min(255,g+50)},${Math.min(255,b+50)})`;
-  document.querySelectorAll('.cav,.bav').forEach(el=>el.style.background=`rgba(${r},${g},${b},.25)`);
-  imgWrap.style.background=`rgb(${Math.min(255,r+65)},${Math.min(255,g+65)},${Math.min(255,b+65)})`;
-  $('csBg').style.background=hex;
-}
-function applyTagAColor(hex){
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  tA.style.background=`rgba(${r},${g},${b},.75)`;
-  $('csA').style.background=hex;
-}
-function applyTagBColor(hex){
-  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
-  tB.style.background=`rgba(${r},${g},${b},.75)`;
-  $('csB').style.background=hex;
-}
-$('ciBg').addEventListener('input',e=>applyBgColor(e.target.value));
-$('ciA').addEventListener('input',e=>applyTagAColor(e.target.value));
-$('ciB').addEventListener('input',e=>applyTagBColor(e.target.value));
-// init tag B with its default
-applyTagBColor('#c8a0b4');
-
-/* ── Panels ── */
-const panels={colors:$('pCl'),tags:$('pTg'),pname:$('pPn')};
-const pbtns={colors:$('bCl'),tags:$('bTg'),pname:$('bPn')};
-function togP(n){
-  if(activeP===n){panels[n].classList.remove('open');pbtns[n].classList.remove('on');activeP=null}
-  else{Object.keys(panels).forEach(k=>{panels[k].classList.remove('open');pbtns[k].classList.remove('on')});panels[n].classList.add('open');pbtns[n].classList.add('on');activeP=n}
-}
-$('bCl').onclick=()=>togP('colors');
-$('bTg').onclick=()=>togP('tags');
-$('bPn').onclick=()=>togP('pname');
-document.addEventListener('click',e=>{if(!e.target.closest('.panel')&&!e.target.closest('.tb')&&!e.target.closest('.csw')){Object.keys(panels).forEach(k=>{panels[k].classList.remove('open');pbtns[k]&&pbtns[k].classList.remove('on')});activeP=null}});
-
-/* ── Upload ── */
-$('bUp').onclick=()=>fileIn.click();
-$('uplArea').onclick=e=>{e.stopPropagation();fileIn.click()};
-fileIn.onchange=e=>{const f=e.target.files[0];if(f)loadImg(f)};
-
-imgWrap.addEventListener('dragover',e=>{e.preventDefault();const u=$('uplArea');u&&u.classList.add('over')});
-imgWrap.addEventListener('dragleave',()=>{const u=$('uplArea');u&&u.classList.remove('over')});
-imgWrap.addEventListener('drop',e=>{e.preventDefault();const u=$('uplArea');u&&u.classList.remove('over');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadImg(f)});
-
-function loadImg(f){
-  const rd=new FileReader();
-  rd.onload=ev=>{
-    const img = new Image();
-    img.onload = () => {
-      // 비율을 계산하여 가장 짧은 면을 화면에 딱 맞춤 (초강제 확대 방지)
-      if (img.width > img.height) {
-        imgBaseStyle = "height:100%; width:auto;";
-      } else {
-        imgBaseStyle = "width:100%; height:auto;";
-      }
-      imgSrc=ev.target.result; panX=0; panY=0; scale=1;
-      renderImg();
-      toast('IMAGE UPLOADED');
+// 이미지 업로드 로직
+fileIn.onchange = e => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imgInner.innerHTML = `<img src="${ev.target.result}" class="uimg">`;
     };
-    img.src = ev.target.result;
-  };
-  rd.readAsDataURL(f);
-}
-function applyImgTransform(){
-  const img=$('uimgEl');
-  if(img) img.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;
-}
-function renderImg(){
-  imgInner.innerHTML=`<img class="uimg" id="uimgEl" src="${imgSrc}" draggable="false" style="${imgBaseStyle} transform:translate(${panX}px,${panY}px) scale(${scale})">`;
-}
-
-/* ── Zoom ── */
-imgWrap.addEventListener('wheel',e=>{
-  if(!imgSrc)return;
-  e.preventDefault();
-  scale=Math.min(4,Math.max(1,scale+(e.deltaY>0?-.06:.06)));
-  applyImgTransform();
-},{passive:false});
-
-/* ── Pan (drag image to move it inside square viewport) ── */
-let panOn=false,panSx,panSy,panSpx,panSpy;
-imgWrap.addEventListener('mousedown',e=>{
-  if(!imgSrc)return;
-  if(e.target.closest('.tag'))return; // ignore tag drags
-  e.preventDefault();
-  panOn=true;
-  panSx=e.clientX;panSy=e.clientY;
-  panSpx=panX;panSpy=panY;
-  imgWrap.style.cursor='grabbing';
-});
-document.addEventListener('mousemove',e=>{
-  if(!panOn)return;
-  panX=panSpx+(e.clientX-panSx);
-  panY=panSpy+(e.clientY-panSy);
-  applyImgTransform();
-});
-document.addEventListener('mouseup',()=>{if(panOn){panOn=false;imgWrap.style.cursor='default'}});
-
-// touch
-imgWrap.addEventListener('touchstart',e=>{
-  if(!imgSrc)return;
-  if(e.target.closest('.tag'))return;
-  const t=e.touches[0];
-  panOn=true;panSx=t.clientX;panSy=t.clientY;panSpx=panX;panSpy=panY;
-},{passive:true});
-imgWrap.addEventListener('touchmove',e=>{
-  if(!panOn)return;
-  e.preventDefault();
-  const t=e.touches[0];
-  panX=panSpx+(t.clientX-panSx);
-  panY=panSpy+(t.clientY-panSy);
-  applyImgTransform();
-},{passive:false});
-imgWrap.addEventListener('touchend',()=>{panOn=false});
-
-/* ── Reset ── */
-$('bRs').onclick=()=>{
-  imgSrc=null;scale=1;panX=0;panY=0;imgBaseStyle="";
-  imgInner.innerHTML=`<div class="upl" id="uplArea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" opacity=".4"/><path d="M21 15l-5-5L5 21"/></svg><div class="upl-t">DROP IMAGE HERE<br>OR CLICK TO UPLOAD</div></div>`;
-  $('uplArea').onclick=e=>{e.stopPropagation();fileIn.click()};
-  toast('RESET');
+    reader.readAsDataURL(file);
+  }
 };
 
-/* ── Drag Tags (drag only) ── */
-function makeDrag(el){
-  let on=false,sx,sy,sl,st;
-  el.addEventListener('mousedown',e=>{
-    e.preventDefault();
-    on=true;
-    const wr=imgWrap.getBoundingClientRect(),er=el.getBoundingClientRect();
-    sx=e.clientX;sy=e.clientY;sl=er.left-wr.left;st=er.top-wr.top;
-    el.style.left=sl+'px';el.style.top=st+'px';el.style.right='auto';el.style.bottom='auto';
-    el.style.cursor='grabbing';document.body.style.userSelect='none';
-  });
-  document.addEventListener('mousemove',e=>{
-    if(!on)return;
-    const wr=imgWrap.getBoundingClientRect();
-    el.style.left=Math.max(-60,Math.min(wr.width+20,sl+(e.clientX-sx)))+'px';
-    el.style.top=Math.max(-40,Math.min(wr.height+20,st+(e.clientY-sy)))+'px';
-  });
-  document.addEventListener('mouseup',()=>{if(on){on=false;el.style.cursor='grab';document.body.style.userSelect=''}});
-  el.addEventListener('touchstart',e=>{const t=e.touches[0];on=true;const wr=imgWrap.getBoundingClientRect(),er=el.getBoundingClientRect();sx=t.clientX;sy=t.clientY;sl=er.left-wr.left;st=er.top-wr.top;el.style.left=sl+'px';el.style.top=st+'px';el.style.right='auto';el.style.bottom='auto'},{passive:true});
-  el.addEventListener('touchmove',e=>{if(!on)return;e.preventDefault();const t=e.touches[0];const wr=imgWrap.getBoundingClientRect();el.style.left=Math.max(-60,Math.min(wr.width+20,sl+(t.clientX-sx)))+'px';el.style.top=Math.max(-40,Math.min(wr.height+20,st+(t.clientY-sy)))+'px'},{passive:false});
-  el.addEventListener('touchend',()=>{on=false});
-}
-makeDrag(tA);makeDrag(tB);
-function rstTag(w){if(w==='A'){tA.style.cssText='left:10px;bottom:24px;background:'+tA.style.background}else{tB.style.cssText='right:10px;top:14px;background:'+tB.style.background}}
+// 캡쳐 및 저장
+async function exportImg() {
+  const cap = document.getElementById('capture');
+  const bg = document.getElementById('bg');
+  
+  // 가상 캔버스 생성 (배경 도트 포함)
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    position:fixed; left:-9999px; top:0; 
+    width:500px; padding:50px; 
+    background:${getComputedStyle(bg).backgroundColor}; 
+    display:flex; justify-content:center;
+  `;
+  
+  // 도트 복제
+  const dotLayer = document.createElement('div');
+  dotLayer.style.cssText = `
+    position:absolute; inset:0; 
+    background-image:radial-gradient(circle,rgba(255,255,255,.15) 1.2px,transparent 1.2px);
+    background-size:14px 14px;
+  `;
+  wrapper.appendChild(dotLayer);
+  
+  const clone = cap.cloneNode(true);
+  clone.style.position = "relative";
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
 
-/* ── Sync ── */
-$('tiA').addEventListener('input',e=>{tA.textContent=e.target.value||'@NAME_ID';$('uA').textContent=e.target.value||'@NAME_ID'});
-$('tiB').addEventListener('input',e=>{tB.textContent=e.target.value||'@NAME_ID';$('uB').textContent=e.target.value||'@NAME_ID'});
-$('uA').addEventListener('input',function(){tA.textContent=this.textContent;$('tiA').value=this.textContent});
-$('uB').addEventListener('input',function(){tB.textContent=this.textContent;$('tiB').value=this.textContent});
-$('pnI').addEventListener('input',e=>{pnT.textContent=e.target.value||'PAIR NAME'});
-$('vb').onclick=function(){this.classList.toggle('off')};
-['uA','uB'].forEach(id=>{$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}})});
-
-/* ── Export ── */
-$('bEx').onclick=async()=>{
-  toast('SAVING...');
-  $('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
-
-  const PAD=32, SC=5;
-  const iwRect=imgWrap.getBoundingClientRect();
-  const capRect=cap.getBoundingClientRect();
-  const bgColor=getComputedStyle($('bg')).backgroundColor;
-
-  // Off-screen wrapper
-  const wrap=document.createElement('div');
-  wrap.style.cssText=`position:fixed;left:-9999px;top:0;width:${Math.round(capRect.width+PAD*2)}px;background:${bgColor};padding:${PAD}px;box-sizing:border-box;`;
-
-  // Dot pattern (PNG, html2canvas-safe)
-  const patCanvas=document.createElement('canvas');
-  patCanvas.width=12;patCanvas.height=12;
-  const pctx=patCanvas.getContext('2d');
-  pctx.fillStyle='rgba(255,255,255,0.55)';
-  pctx.beginPath();pctx.arc(6,6,1.3,0,Math.PI*2);pctx.fill();
-  const patUri=patCanvas.toDataURL('image/png');
-
-  const dots=document.createElement('div');
-  dots.style.cssText=`position:absolute;inset:0;background-image:url("${patUri}");background-size:12px 12px;background-repeat:repeat;pointer-events:none;`;
-  wrap.appendChild(dots);
-
-  // Clone
-  const clone=cap.cloneNode(true);
-  clone.style.cssText='position:relative;z-index:1;';
-
-  // FORCE SQUARE on cloned image area
-  const cloneIw=clone.querySelector('#imgWrap');
-  if(cloneIw){
-    cloneIw.style.width=iwRect.width+'px';
-    cloneIw.style.height=iwRect.width+'px';
-    cloneIw.style.aspectRatio='1/1';
-  }
-
-  // Pre-render the photo at high resolution into a canvas, convert to data URL,
-  // then replace <img> with a NEW <img> using that data URL.
-  // (html2canvas handles <img src="data:..."> reliably; it's flaky with raw <canvas> elements.)
-  const cloneImg=clone.querySelector('#uimgEl');
-  if(cloneImg && imgSrc){
-    const tmp=new Image();
-    tmp.src=imgSrc;
-    await new Promise(r=>{tmp.onload=r;tmp.onerror=r});
-
-    if(tmp.naturalWidth>0){
-      const outSize=Math.round(iwRect.width*SC);
-      const hcnv=document.createElement('canvas');
-      hcnv.width=outSize;hcnv.height=outSize;
-      const hctx=hcnv.getContext('2d');
-      hctx.imageSmoothingEnabled=true;
-      hctx.imageSmoothingQuality='high';
-
-      // object-fit:cover crop with zoom + pan
-      const z=scale;
-      const iR=tmp.naturalWidth/tmp.naturalHeight;
-      let srcSize;
-      if(iR>=1) srcSize=tmp.naturalHeight/z;
-      else srcSize=tmp.naturalWidth/z;
-      // pan: convert display-px offset to source-px offset (negate because image moves opposite to crop)
-      const panSrcX=panX*srcSize/iwRect.width;
-      const panSrcY=panY*srcSize/iwRect.width;
-      const srcX=(tmp.naturalWidth-srcSize)/2 - panSrcX;
-      const srcY=(tmp.naturalHeight-srcSize)/2 - panSrcY;
-
-      hctx.drawImage(tmp,srcX,srcY,srcSize,srcSize,0,0,outSize,outSize);
-
-      // Convert to data URL
-      const photoUri=hcnv.toDataURL('image/png');
-
-      // Replace with regular img tag (html2canvas-friendly)
-      const newImg=document.createElement('img');
-      newImg.src=photoUri;
-      newImg.crossOrigin='anonymous';
-      newImg.style.cssText='width:100%;height:100%;display:block;object-fit:fill;';
-      cloneImg.parentNode.replaceChild(newImg,cloneImg);
-
-      // Wait for the replacement img to load
-      await new Promise(r=>{newImg.onload=r;newImg.onerror=r;if(newImg.complete)r()});
-    }
-  }
-
-  clone.querySelectorAll('.zh').forEach(el=>el.remove());
-
-  // Fix html2canvas text-alignment quirk: replace <input> with <div> in search bar
-  const sInClone=clone.querySelector('#sIn');
-  if(sInClone){
-    const div=document.createElement('div');
-    div.textContent=sInClone.value;
-    div.style.cssText='border:none;background:transparent;font-family:Outfit,sans-serif;font-size:11px;color:'+getComputedStyle(sInClone).color+';letter-spacing:.3px;width:100%;line-height:1.4;';
-    sInClone.parentNode.replaceChild(div,sInClone);
-  }
-
-  // Force explicit line-height on text containers (html2canvas baseline quirk)
-  clone.querySelectorAll('.cu,.bcu,.bio,.cf,.bcf,.pn-top').forEach(el=>{
-    el.style.lineHeight='1.5';
-  });
-
-  wrap.appendChild(clone);
-  document.body.appendChild(wrap);
-  await new Promise(r=>setTimeout(r,150));
-
-  try{
-    const c=await html2canvas(wrap,{
-      scale:SC,useCORS:true,allowTaint:true,
-      backgroundColor:null,logging:false,
-      width:wrap.offsetWidth,height:wrap.offsetHeight,
-      imageTimeout:0
+  try {
+    const canvas = await html2canvas(wrapper, {
+      scale: 3,
+      backgroundColor: null,
+      useCORS: true
     });
-    const a=document.createElement('a');
-    a.download='pair-frame.png';
-    a.href=c.toDataURL('image/png',1.0);
-    a.click();
-    toast('✓ SAVED AS PNG');
-  }catch(err){toast('ERROR: '+err.message);console.error(err)}
-  document.body.removeChild(wrap);
-};
+    const link = document.createElement('a');
+    link.download = 'pair-frame-result.png';
+    link.href = canvas.toDataURL();
+    link.click();
+    showToast("저장 완료!");
+  } catch (err) {
+    console.error(err);
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+}
 
-/* ── Plain text paste (strip formatting) ── */
-document.querySelectorAll('[contenteditable]').forEach(el=>{
-  el.addEventListener('paste',e=>{
-    e.preventDefault();
-    const text=(e.clipboardData||window.clipboardData).getData('text/plain');
-    document.execCommand('insertText',false,text);
-  });
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 2000);
+}
+
+// 태그 드래그 가능하게 만들기
+document.querySelectorAll('.tag').forEach(tag => {
+  let isDragging = false;
+  tag.onmousedown = e => { isDragging = true; };
+  document.onmousemove = e => {
+    if (!isDragging) return;
+    const rect = document.querySelector('.iw').getBoundingClientRect();
+    tag.style.left = (e.clientX - rect.left - 20) + 'px';
+    tag.style.top = (e.clientY - rect.top - 10) + 'px';
+    tag.style.right = 'auto'; tag.style.bottom = 'auto';
+  };
+  document.onmouseup = () => { isDragging = false; };
 });
-
-/* ── Toast ── */
-let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2000)}
-imgWrap.addEventListener('contextmenu',e=>e.preventDefault());
 </script>
 </body>
 </html>
