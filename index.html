@@ -119,6 +119,12 @@ button{font-family:inherit}
 .re-btn:hover{transform:scale(1.08)}
 .re-btn svg{width:15px;height:15px}
 .iw:hover .re-btn.show{display:flex}
+.lock-btn{left:44px}
+.iw.has-img:hover .lock-btn,.iw.has-img.locked .lock-btn{display:flex}
+.iw.locked .lock-btn{background:var(--p);color:#fff}
+.iw.has-img.locked{touch-action:auto;cursor:default}
+.iw.locked .zh{display:none}
+input[type=range]:disabled{opacity:.4}
 
 /* action row */
 .cact{display:flex;align-items:center;gap:15px;padding:11px 15px 4px}
@@ -351,6 +357,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
 
     <div class="iw" id="imgWrap">
       <button class="re-btn" id="bReUp" title="사진 바꾸기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5-5L5 21"/></svg></button>
+      <button class="re-btn lock-btn" id="bLock" title="사진 고정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="3"/><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5"/></svg></button>
       <div class="ic"><div class="ii" id="imgInner"></div></div>
       <div class="tag" id="tA" style="left:12px;bottom:22px">@NAME_ID</div>
       <div class="tag" id="tB" style="right:12px;top:14px">@NAME_ID</div>
@@ -427,6 +434,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
     <button class="pill danger" id="phDel">삭제</button>
   </div>
   <div class="sec box"><div class="lbl">확대 <em id="zv">100%</em></div><input type="range" id="zr" min="1" max="4" step="0.01" value="1"></div>
+  <div class="sec list"><div class="srow">사진 고정 <span style="font-size:10.5px;color:var(--ink2);font-weight:400;margin-right:auto">위치·확대 잠금</span><button class="switch" id="lockSw"></button></div></div>
   <div class="sec">
     <div class="lbl">프로필 사진</div>
     <div class="row">
@@ -699,7 +707,14 @@ function storePhoto(){
 $('phUp').onclick=()=>fileIn.click();
 $('bReUp').onclick=e=>{e.stopPropagation();fileIn.click()};
 $('phDel').onclick=()=>{if(imgSrc){clearPhoto();toast('사진을 지웠어요')}};
-$('phCenter').onclick=()=>{panX=panY=0;scale=1;applyT();syncZoom();save()};
+function applyLock(){
+  imgWrap.classList.toggle('locked',!!st.lock);$('lockSw').classList.toggle('on',!!st.lock);$('zr').disabled=!!st.lock;
+  $('bLock').title=st.lock?'고정 풀기':'사진 고정';
+}
+function toggleLock(){st.lock=!st.lock;applyLock();save();toast(st.lock?'사진을 고정했어요':'고정을 풀었어요')}
+$('lockSw').onclick=toggleLock;
+$('bLock').onclick=e=>{e.stopPropagation();toggleLock()};
+$('phCenter').onclick=()=>{if(st.lock){toast('사진이 고정되어 있어요');return}panX=panY=0;scale=1;applyT();syncZoom();save()};
 fileIn.onchange=e=>{loadImg(e.target.files[0]);fileIn.value=''};
 $('zr').oninput=e=>{scale=+e.target.value;applyT();$('zv').textContent=Math.round(scale*100)+'%';save()};
 
@@ -711,7 +726,7 @@ document.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();c
 
 // wheel zoom
 imgWrap.addEventListener('wheel',e=>{
-  if(!imgSrc)return;e.preventDefault();
+  if(!imgSrc||st.lock)return;e.preventDefault();
   scale=clamp(scale*Math.exp(-e.deltaY*.0015),1,4);applyT();syncZoom();save();
 },{passive:false});
 
@@ -724,7 +739,7 @@ function startGest(){
   else if(p.length>=2)gest={m:'pinch',d:dist(p[0],p[1])||1,s:scale,mx:(p[0].x+p[1].x)/2,my:(p[0].y+p[1].y)/2,px:panX,py:panY};
 }
 imgWrap.addEventListener('pointerdown',e=>{
-  if(!imgSrc||e.target.closest('.tag,.re-btn'))return;
+  if(!imgSrc||st.lock||e.target.closest('.tag,.re-btn'))return;
   e.preventDefault();imgWrap.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});startGest();
 });
@@ -865,7 +880,7 @@ function save(){
       pn:pnT.textContent,uA:uA.textContent,uB:uB.textContent,bio:bioT.innerText,cap:$('capT').innerText,pat:st.pat,
       cnt:[...document.querySelectorAll('.cnt')].map(e=>e.textContent),s:sIn.value,
       bg:st.bg,a:st.a,b:st.b,id:st.id,theme:st.theme,title:st.title,hide:st.hide,avA:st.avA,avB:st.avB,
-      tA:tagPos(tA),tB:tagPos(tB),pr:prTa.value,view:{scale,panX,panY},fx:[...fx],spd:gifSpeed,sz:gifSize
+      tA:tagPos(tA),tB:tagPos(tB),pr:prTa.value,view:{scale,panX,panY},lock:!!st.lock,fx:[...fx],spd:gifSpeed,sz:gifSize
     }))}catch(e){}
   },300);
 }
@@ -892,9 +907,10 @@ function restore(){
     if(Array.isArray(s.fx))fx=new Set(s.fx);
     if(s.spd)gifSpeed=s.spd;
     if(s.sz)gifSize=s.sz;
+    st.lock=!!s.lock;
   }
   applyBg(st.bg);applyPat();applyTag('a',st.a);applyTag('b',st.b);applyId(st.id);
-  applyAv('A');applyAv('B');applyHide();applyTheme();applyTitle();syncGifUI();
+  applyAv('A');applyAv('B');applyLock();applyHide();applyTheme();applyTitle();syncGifUI();
   let ph=null;try{ph=localStorage.getItem(PH_KEY)}catch(e){}
   if(ph)setPhoto(ph,true).then(fit).catch(()=>clearPhoto());
 }
