@@ -308,6 +308,13 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
 .mmeta{font-size:11px;color:var(--ink2);text-align:center}
 .mact{display:flex;gap:8px}
 .avbox{width:min(300px,100%);gap:10px}
+.pvbox{width:min(360px,100%);gap:9px;max-height:calc(100vh - 24px);overflow-y:auto}
+.pvwrap{position:relative;display:flex;justify-content:center;background:var(--pq);border-radius:14px;padding:8px;min-height:120px}
+#pvCv{display:block;max-width:100%;max-height:min(52vh,460px);width:auto;height:auto;border-radius:10px}
+.pvload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink2);background:rgba(255,253,251,.7);border-radius:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.pvload.show{opacity:1}
+.tiles.sm .tile{padding:6px 2px 5px;gap:3px;font-size:10px}
+.tiles.sm .tile b{font-size:12px}
 .avstage{display:flex;justify-content:center;padding:6px 0 2px}
 #avEdPic{width:200px;height:200px;border-radius:50%;background-color:var(--pp);cursor:grab;touch-action:none;
   box-shadow:0 0 0 3px #fff,0 0 0 4.5px var(--p);user-select:none;-webkit-user-select:none}
@@ -535,7 +542,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
   <div class="sec"><div class="lbl">크기</div>
     <div class="seg"><button data-sz="s">작게</button><button data-sz="m">보통</button><button data-sz="l">크게</button></div>
   </div>
-  <div class="sec"><button class="pill acc wide" id="gfGo">GIF 만들기</button><div class="prog" id="gfProg"><i></i></div></div>
+  <div class="sec row"><button class="pill flex" id="gfPv" style="height:38px">▶ 미리보기</button><button class="pill acc flex" id="gfGo" style="height:38px">GIF 만들기</button></div><div class="prog" id="gfProg"><i></i></div>
   <p class="hint">크게 만들수록 시간이 오래 걸리고 파일이 커져요.</p>
 </div>
 
@@ -551,6 +558,25 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
       <button class="pill danger" id="avDel">삭제</button>
     </div>
     <p class="mnote">사진을 끌어서 위치를 맞추고, 휠·두 손가락·슬라이더로 확대해요</p>
+  </div>
+</div>
+
+<!-- ───────── GIF PREVIEW ───────── -->
+<div class="modal ui" id="pvModal">
+  <div class="mbox pvbox">
+    <div class="ph" style="position:static;padding-top:2px"><h3>GIF 미리보기</h3><button class="px" id="pvX" title="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="pvwrap"><canvas id="pvCv"></canvas><div class="pvload" id="pvLoad">불러오는 중…</div></div>
+    <div class="tiles sm">
+      <button class="tile" data-fx="sparkle"><b>✦</b>반짝반짝</button>
+      <button class="tile" data-fx="hearts"><b>♡</b>하트 풍선</button>
+      <button class="tile" data-fx="heartbeat"><b>♥</b>두근두근</button>
+      <button class="tile" data-fx="zoom"><b>⤢</b>줌인</button>
+      <button class="tile" data-fx="float"><b>≋</b>둥실 태그</button>
+      <button class="tile" data-fx="typing"><b>Aa</b>타이핑</button>
+    </div>
+    <div class="seg"><button data-spd="slow">느리게</button><button data-spd="normal">보통</button><button data-spd="fast">빠르게</button></div>
+    <div class="mmeta" id="pvMeta"></div>
+    <div class="mact"><button class="pill acc flex" id="pvGo">이대로 GIF 만들기</button><button class="pill" id="pvClose">닫기</button></div>
   </div>
 </div>
 
@@ -929,7 +955,7 @@ function syncGifUI(){
   document.querySelectorAll('[data-spd]').forEach(b=>b.classList.toggle('on',b.dataset.spd===gifSpeed));
   document.querySelectorAll('[data-sz]').forEach(b=>b.classList.toggle('on',b.dataset.sz===gifSize));
 }
-document.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{const k=b.dataset.fx;fx.has(k)?fx.delete(k):fx.add(k);syncGifUI();save()});
+document.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{const k=b.dataset.fx;fx.has(k)?fx.delete(k):fx.add(k);syncGifUI();save();if(typeof schedulePv==='function')schedulePv()});
 document.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{gifSpeed=b.dataset.spd;syncGifUI();save()});
 document.querySelectorAll('[data-sz]').forEach(b=>b.onclick=()=>{gifSize=b.dataset.sz;syncGifUI();save()});
 
@@ -1059,7 +1085,12 @@ async function buildLayers(S,effects){
   const sic=getComputedStyle(sIn);L.search=sc&&sc.offsetWidth?{r:rel(sc),text:sIn.value,color:sic.color,weight:sic.fontWeight,family:sic.fontFamily}:null;
 
   try{
-    L.base=await html2canvas(wrap,{scale:S,useCORS:true,allowTaint:true,backgroundColor:null,logging:false,width:wrap.offsetWidth,height:wrap.offsetHeight,imageTimeout:0});
+    // html2canvas paints box-shadows over the box at scale≈1, so render at 2× and scale down
+    const HS=S<1.2?2:S;
+    const raw=await html2canvas(wrap,{scale:HS,useCORS:true,allowTaint:true,backgroundColor:null,logging:false,width:wrap.offsetWidth,height:wrap.offsetHeight,imageTimeout:0});
+    if(HS===S)L.base=raw;
+    else{const c=document.createElement('canvas');c.width=Math.round(raw.width*S/HS);c.height=Math.round(raw.height*S/HS);
+      const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(raw,0,0,c.width,c.height);L.base=c}
   }finally{wrap.remove()}
   prepFx(L);
   return L;
@@ -1297,6 +1328,7 @@ function setProg(v,label){
   $('gfProg').classList.toggle('show',v!=null);
   $('gfProg').firstElementChild.style.width=((v||0)*100)+'%';
   const b=$('gfGo');b.textContent=label||'GIF 만들기';b.disabled=v!=null;
+  const g=$('pvGo');g.textContent=label||'이대로 GIF 만들기';g.disabled=v!=null;
 }
 async function exportGIF(){
   if(busy)return;busy=true;
@@ -1325,10 +1357,44 @@ async function exportGIF(){
 }
 $('gfGo').onclick=exportGIF;
 
+/* ════════ GIF live preview ════════ */
+let pv=null,pvRaf=null,pvTok=0,pvTimer=null;
+const pvOpen=()=>$('pvModal').classList.contains('open');
+async function buildPreview(){
+  const tok=++pvTok;$('pvLoad').classList.add('show');
+  while(busy){await wait(80);if(tok!==pvTok||!pvOpen())return}
+  try{
+    const S=Math.min(2,Math.max(1,window.devicePixelRatio||1)),f=new Set(fx);
+    const L=await buildLayers(S,f);
+    if(tok!==pvTok||!pvOpen())return;
+    const c=$('pvCv');c.width=L.base.width;c.height=L.base.height;
+    c.style.width=(L.base.width/S)+'px';
+    pv={L,S,f};
+    const k={s:1,m:1.5,l:2}[gifSize]||1.5;
+    $('pvMeta').textContent=f.size?`실제 GIF 크기 약 ${Math.round(L.base.width/S*k)}×${Math.round(L.base.height/S*k)} · 24프레임`:'효과를 하나 이상 고르면 움직여요';
+    if(!pvRaf)pvRaf=requestAnimationFrame(pvLoop);
+  }catch(e){console.error(e);$('pvMeta').textContent='미리보기를 만들 수 없어요'}
+  if(tok===pvTok)$('pvLoad').classList.remove('show');
+}
+function pvLoop(ts){
+  if(!pvOpen()||!pv){pvRaf=null;return}
+  const frames=pv.f.size?24:1,delay=({slow:10,normal:7,fast:5}[gifSpeed]||7)*10;
+  const i=Math.floor(ts/delay)%frames;
+  compose($('pvCv').getContext('2d'),pv.L,pv.S,i/frames,pv.f);
+  pvRaf=requestAnimationFrame(pvLoop);
+}
+function schedulePv(){if(!pvOpen())return;clearTimeout(pvTimer);pvTimer=setTimeout(buildPreview,160)}
+function openPreview(){closeP();$('pvModal').classList.add('open');pv=null;buildPreview()}
+function closePreview(){$('pvModal').classList.remove('open');pvTok++;pv=null}
+$('gfPv').onclick=openPreview;
+$('pvX').onclick=closePreview;$('pvClose').onclick=closePreview;
+$('pvModal').addEventListener('click',e=>{if(e.target.id==='pvModal')closePreview()});
+$('pvGo').onclick=async()=>{await exportGIF();closePreview()};
+
 /* ════════ keys ════════ */
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();exportPNG()}
-  if(e.key==='Escape'){closeP();closeModal();if(avEdit)closeAvEd()}
+  if(e.key==='Escape'){closeP();closeModal();if(avEdit)closeAvEd();if(pvOpen())closePreview()}
 });
 
 /* ════════ init ════════ */
