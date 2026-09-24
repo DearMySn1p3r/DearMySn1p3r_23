@@ -307,6 +307,11 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
 .mbox img{max-width:100%;max-height:60vh;object-fit:contain;border-radius:14px;display:block;margin:0 auto}
 .mmeta{font-size:11px;color:var(--ink2);text-align:center}
 .mact{display:flex;gap:8px}
+.avbox{width:min(300px,100%);gap:10px}
+.avstage{display:flex;justify-content:center;padding:6px 0 2px}
+#avEdPic{width:200px;height:200px;border-radius:50%;background-color:var(--pp);cursor:grab;touch-action:none;
+  box-shadow:0 0 0 3px #fff,0 0 0 4.5px var(--p);user-select:none;-webkit-user-select:none}
+#avEdPic:active{cursor:grabbing}
 .mnote{font-size:10.5px;color:var(--ink2);text-align:center}
 
 .toast{
@@ -344,7 +349,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
     </div>
 
     <div class="ch">
-      <div class="cav" id="avAel" title="프로필 사진 바꾸기"></div>
+      <div class="cav" id="avAel" title="프로필 사진 (눌러서 올리기·위치 조정)"></div>
       <div class="cm">
         <div class="cu">
           <span contenteditable="true" spellcheck="false" id="uA">@NAME_ID</span>
@@ -383,7 +388,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
   </div>
 
   <div class="bc2">
-    <div class="bav" id="avBel" title="프로필 사진 바꾸기"></div>
+    <div class="bav" id="avBel" title="프로필 사진 (눌러서 올리기·위치 조정)"></div>
     <div class="bcc">
       <div class="bhd"><div class="bcu" contenteditable="true" spellcheck="false" id="uB">@NAME_ID</div><span class="fol">Follow</span></div>
       <div class="bcf"><b class="cnt" contenteditable="true" spellcheck="false">1</b> Followers · <b class="cnt" contenteditable="true" spellcheck="false">1</b> Following</div>
@@ -443,7 +448,7 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
       <button class="pill danger" id="avClr">지우기</button>
     </div>
   </div>
-  <p class="hint">사진은 끌어서 옮기고, 휠이나 두 손가락으로 확대해요. 파일을 화면에 끌어다 놓거나 붙여넣기(Ctrl+V)해도 돼요.</p>
+  <p class="hint">사진은 끌어서 옮기고, 휠이나 두 손가락으로 확대해요. 파일을 화면에 끌어다 놓거나 붙여넣기(Ctrl+V)해도 돼요. 프로필 동그라미를 누르면 프로필 사진 위치·크기도 바꿀 수 있어요.</p>
 </div>
 
 <div class="panel ui" id="pTg">
@@ -532,6 +537,21 @@ input[type=range]{width:100%;accent-color:var(--p);height:24px}
   </div>
   <div class="sec"><button class="pill acc wide" id="gfGo">GIF 만들기</button><div class="prog" id="gfProg"><i></i></div></div>
   <p class="hint">크게 만들수록 시간이 오래 걸리고 파일이 커져요.</p>
+</div>
+
+<!-- ───────── AVATAR EDITOR ───────── -->
+<div class="modal ui" id="avModal">
+  <div class="mbox avbox">
+    <div class="ph" style="position:static;padding-top:2px"><h3 id="avTitle">프로필 사진</h3><button class="px" id="avDone" title="완료"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="avstage"><div id="avEdPic"></div></div>
+    <div class="box" style="margin-top:4px"><div class="lbl">확대</div><input type="range" id="avZr" min="1" max="4" step="0.01" value="1"></div>
+    <div class="row">
+      <button class="pill flex" id="avChange">사진 바꾸기</button>
+      <button class="pill" id="avReset">가운데로</button>
+      <button class="pill danger" id="avDel">삭제</button>
+    </div>
+    <p class="mnote">사진을 끌어서 위치를 맞추고, 휠·두 손가락·슬라이더로 확대해요</p>
+  </div>
 </div>
 
 <!-- ───────── RESULT ───────── -->
@@ -762,25 +782,68 @@ imgWrap.addEventListener('pointerup',endPtr);
 imgWrap.addEventListener('pointercancel',endPtr);
 imgWrap.addEventListener('contextmenu',e=>e.preventDefault());
 
-/* ════════ avatars ════════ */
-let avTarget='A';
-function applyAv(k){
-  const el=$(k==='A'?'avAel':'avBel'),d=st['av'+k];
-  el.style.backgroundImage=d?`url("${d}")`:'';
+/* ════════ avatars (pan + zoom inside the circle) ════════ */
+let avTarget='A',avEdit=null;
+function avData(k){
+  let d=st['av'+k];
+  if(typeof d==='string')d=st['av'+k]={src:d,w:200,h:200,z:1,x:0,y:0}; // older saves
+  return d;
 }
+function avLimits(d){const m=Math.min(d.w,d.h),dw=d.w/m*d.z,dh=d.h/m*d.z;return{dw,dh,lx:(dw-1)/2,ly:(dh-1)/2}}
+function clampAv(d){const L=avLimits(d);d.x=clamp(d.x,-L.lx,L.lx);d.y=clamp(d.y,-L.ly,L.ly)}
+/* paint avatar d into a circle element of diameter D (px values so exports match) */
+function paintAv(el,d,D){
+  if(!d){el.style.backgroundImage='';el.style.backgroundSize='';el.style.backgroundPosition='';return}
+  clampAv(d);const L=avLimits(d);
+  el.style.backgroundImage=`url("${d.src}")`;
+  el.style.backgroundSize=`${L.dw*D}px ${L.dh*D}px`;
+  el.style.backgroundPosition=`${(1-L.dw)/2*D+d.x*D}px ${(1-L.dh)/2*D+d.y*D}px`;
+  el.style.backgroundRepeat='no-repeat';
+}
+function applyAv(k){const el=$(k==='A'?'avAel':'avBel');paintAv(el,avData(k),el.offsetWidth||(k==='A'?30:34))}
 async function loadAv(f){
   if(!f||!f.type.startsWith('image/'))return;
-  const im=await loadImgEl(await readFile(f));
-  const S=200,c=document.createElement('canvas');c.width=c.height=S;
-  const s=Math.min(im.naturalWidth,im.naturalHeight);
-  c.getContext('2d').drawImage(im,(im.naturalWidth-s)/2,(im.naturalHeight-s)/2,s,s,0,0,S,S);
-  st['av'+avTarget]=c.toDataURL('image/jpeg',.9);applyAv(avTarget);save();toast('프로필 사진을 바꿨어요');
+  try{
+    const im=await loadImgEl(await readFile(f));
+    const M=600,k=Math.min(1,M/Math.max(im.naturalWidth,im.naturalHeight));
+    const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*k);c.height=Math.round(im.naturalHeight*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    st['av'+avTarget]={src:c.toDataURL('image/jpeg',.9),w:c.width,h:c.height,z:1,x:0,y:0};
+    applyAv(avTarget);save();openAvEd(avTarget);
+  }catch(e){toast('이미지를 열 수 없어요')}
 }
 const pickAv=k=>{avTarget=k;avIn.click()};
-$('avAel').onclick=()=>pickAv('A');$('avBel').onclick=()=>pickAv('B');
-$('avAup').onclick=()=>pickAv('A');$('avBup').onclick=()=>pickAv('B');
-$('avClr').onclick=()=>{st.avA=st.avB=null;applyAv('A');applyAv('B');save()};
+const avClick=k=>{if(avData(k))openAvEd(k);else pickAv(k)};
+$('avAel').onclick=()=>avClick('A');$('avBel').onclick=()=>avClick('B');
+$('avAup').onclick=()=>avClick('A');$('avBup').onclick=()=>avClick('B');
+$('avClr').onclick=()=>{st.avA=st.avB=null;applyAv('A');applyAv('B');save();toast('프로필 사진을 지웠어요')};
 avIn.onchange=e=>{loadAv(e.target.files[0]);avIn.value=''};
+
+/* editor */
+const avEl=$('avEdPic'),AVD=()=>avEl.offsetWidth||200;
+function paintEd(){const d=avData(avEdit);if(!d)return;paintAv(avEl,d,AVD());$('avZr').value=d.z;applyAv(avEdit)}
+function openAvEd(k){avEdit=k;avTarget=k;closeP();$('avTitle').textContent=k==='A'?'위 프로필 사진':'아래 프로필 사진';$('avModal').classList.add('open');requestAnimationFrame(paintEd)}
+function closeAvEd(){$('avModal').classList.remove('open');avEdit=null;save()}
+$('avDone').onclick=closeAvEd;
+$('avModal').addEventListener('click',e=>{if(e.target.id==='avModal')closeAvEd()});
+$('avChange').onclick=()=>avIn.click();
+$('avDel').onclick=()=>{st['av'+avEdit]=null;applyAv(avEdit);closeAvEd();toast('프로필 사진을 지웠어요')};
+$('avReset').onclick=()=>{const d=avData(avEdit);if(d){d.z=1;d.x=d.y=0;paintEd()}};
+$('avZr').oninput=e=>{const d=avData(avEdit);if(d){d.z=+e.target.value;paintEd()}};
+avEl.addEventListener('wheel',e=>{const d=avData(avEdit);if(!d)return;e.preventDefault();d.z=clamp(d.z*Math.exp(-e.deltaY*.0015),1,4);paintEd()},{passive:false});
+{
+  const P=new Map();let g=null;
+  const start=()=>{const d=avData(avEdit),v=[...P.values()];if(!d)return;
+    g=v.length>=2?{m:'z',dist:Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)||1,z:d.z}:{m:'p',x:v[0].x,y:v[0].y,ox:d.x,oy:d.y}};
+  avEl.addEventListener('pointerdown',e=>{e.preventDefault();avEl.setPointerCapture(e.pointerId);P.set(e.pointerId,{x:e.clientX,y:e.clientY});start()});
+  avEl.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!g)return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const d=avData(avEdit),v=[...P.values()];if(!d)return;
+    if(g.m==='p'&&v.length===1){d.x=g.ox+(v[0].x-g.x)/AVD();d.y=g.oy+(v[0].y-g.y)/AVD()}
+    else if(g.m==='z'&&v.length>=2){d.z=clamp(g.z*Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)/g.dist,1,4)}
+    paintEd()});
+  const end=e=>{if(!P.has(e.pointerId))return;P.delete(e.pointerId);if(P.size)start();else g=null};
+  avEl.addEventListener('pointerup',end);avEl.addEventListener('pointercancel',end);
+}
 
 /* ════════ tags ════════ */
 const TAG_DEF={A:{left:'12px',bottom:'22px',top:'auto',right:'auto'},B:{right:'12px',top:'14px',left:'auto',bottom:'auto'}};
@@ -983,6 +1046,12 @@ async function buildLayers(S,effects){
     const r={r:rel(t),font:`${cs.fontWeight} ${parseFloat(cs.fontSize)}px ${cs.fontFamily}`,text:t.textContent,bg:cs.backgroundColor,color:cs.color,bw:parseFloat(cs.borderTopWidth)||0,rad:parseFloat(cs.borderTopLeftRadius)||6,bc:cs.borderTopColor,ph:i*.37};
     t.style.visibility='hidden';return r;
   });
+  L.avs=[];
+  for(const k of ['A','B']){
+    const d=avData(k),el=clone.querySelector(k==='A'?'#avAel':'#avBel');
+    if(!d||!el||!el.offsetWidth)continue;
+    try{L.avs.push({r:rel(el),d:{...d},img:await loadImgEl(d.src)});el.style.backgroundImage='none'}catch(e){}
+  }
   const hs=clone.querySelector('#likeHeart svg');
   L.heartR=rel(hs);L.heartColor=getComputedStyle($('likeHeart').querySelector('svg')).color;
   if(effects.has('heartbeat'))hs.style.visibility='hidden';
@@ -1018,6 +1087,15 @@ function drawPhoto(ctx,r,S,z,rad){
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   ctx.drawImage(photoImg,(cx-dw*s/2)*S,(cy-dh*s/2)*S,dw*s*S,dh*s*S);
   ctx.restore();
+}
+function drawAvs(ctx,L,S){
+  for(const a of L.avs){
+    const {x,y,w}=a.r,D=w,d=a.d,Lm=avLimits(d);
+    ctx.save();ctx.beginPath();ctx.arc((x+D/2)*S,(y+D/2)*S,D/2*S,0,Math.PI*2);ctx.clip();
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(a.img,(x+(1-Lm.dw)/2*D+d.x*D)*S,(y+(1-Lm.dh)/2*D+d.y*D)*S,Lm.dw*D*S,Lm.dh*D*S);
+    ctx.restore();
+  }
 }
 function drawTag(ctx,tg,S,dy){
   const {x,y,w,h}=tg.r,Y=y+dy;
@@ -1076,6 +1154,7 @@ function drawTyping(ctx,L,S,t){
 function compose(ctx,L,S,t,f){
   ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
   ctx.drawImage(L.base,0,0);
+  drawAvs(ctx,L,S);
   drawPhoto(ctx,L.photoR,S,f.has('zoom')?1+.07*(1-Math.cos(2*Math.PI*t))/2:1,L.rad);
   if(f.has('hearts'))drawHearts(ctx,L,S,t);
   if(f.has('sparkle'))drawSparkles(ctx,L,S,t);
@@ -1249,7 +1328,7 @@ $('gfGo').onclick=exportGIF;
 /* ════════ keys ════════ */
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='s'){e.preventDefault();exportPNG()}
-  if(e.key==='Escape'){closeP();closeModal()}
+  if(e.key==='Escape'){closeP();closeModal();if(avEdit)closeAvEd()}
 });
 
 /* ════════ init ════════ */
